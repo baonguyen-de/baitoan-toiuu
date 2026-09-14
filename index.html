@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BÀI TOÁN TỐI ƯU CẮT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div>
+          <h1>BÀI TOÁN TỐI ƯU CẮT</h1>
+          <p>
+            Máy chỉ cắt theo quy tắc: <b>NGANG RỒI DỌC.</b>
+          </p>
+        </div>
+        <div class="badge">Thuật toán · 2 giai đoạn · guillotine</div>
+      </header>
+
+      <div class="workspace">
+        <aside class="panel">
+          <form id="order-form">
+            <h2>Tấm nguyên bán thành phẩm</h2>
+            <div class="sheet-size">
+              <label>Rộng
+                <input id="sheet-w" type="number" min="0" step="any" required />
+              </label>
+              <span>×</span>
+              <label>Dài
+                <input id="sheet-h" type="number" min="0" step="any" required />
+              </label>
+            </div>
+
+            <br>
+            <br>
+            <br>
+
+            <h2>Các tấm cần cắt</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Kí hiệu</th>
+                  <th>Rộng</th>
+                  <th>Dài</th>
+                  <th>SL</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="item-body"></tbody>
+            </table>
+            <div class="actions" style="margin-top: 8px">
+              <button class="btn" id="add-row" type="button">Thêm tấm cắt</button>
+            </div>
+
+            <label class="check">
+              <input id="allow-rot" type="checkbox" checked />
+              Cho phép các tấm cắt xoay 90°
+            </label>
+
+            <div class="sample-pick">
+              <span class="sample-pick__label">Mẫu ví dụ</span>
+              <div id="sample-chips" class="sample-chips"></div>
+              <select id="sample-select"></select>
+              <p id="sample-hint" class="sample-hint" hidden></p>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" id="compute" type="submit">Bắt đầu cắt</button>
+            </div>
+            <div id="errors" class="banner banner--err" hidden></div>
+          </form>
+        </aside>
+
+        <main class="results">
+          <div id="plans" class="plan-grid"></div>
+          <section class="viewer">
+            <div id="metrics"></div>
+            <div id="viewer"></div>
+            <div id="legend"></div>
+          </section>
+          <section class="cuts">
+            <h2>HƯỚNG DẪN THỨ TỰ CẮT</h2>
+            <div id="cuts"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
