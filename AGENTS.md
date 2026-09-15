@@ -105,11 +105,15 @@ Ba kiểu mix **phải giữ**:
 | `src/solver.test.js` | `npm test` — test port JS. |
 | `test_cutting_stock.py` | Test bắt buộc của solver Python. |
 | `THUAT_TOAN.md` | Luồng hàm. |
-| `README.md` | Cài đặt / chạy / API. |
+| `README.md` | Cài đặt / chạy / API / Vercel. |
+| `vercel.json` | Deploy Flask lên Vercel. Framework **bắt buộc** `flask` — đừng để Vite (có `package.json`). |
+| `scripts/sync_vercel_public.py` | Build Vercel: copy `index.html` + UI `src/` → `public/` (CDN). |
 
 Không thêm `rectpack`, matplotlib CLI, tồn kho / mua ngoài.
 
 Web **bắt buộc** `python app.py` (http://127.0.0.1:5000). Vite không proxy API — đừng giả định `npm run dev` chạy được thuật toán.
+
+Production Vercel: cùng `app` Flask + `cutting_stock.py`. UI tĩnh từ `public/` (CDN). Sửa giao diện ở `index.html` / `src/` — `scripts/sync_vercel_public.py` chạy lúc build.
 
 ## UI đang đọc (đừng gãy)
 

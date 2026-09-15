@@ -10,6 +10,9 @@ __pycache__/
 node_modules/
 dist/
 
+# Vercel: UI copy vào public/ lúc build (scripts/sync_vercel_public.py)
+public/
+
 # IDE / OS
 .idea/
 .vscode/

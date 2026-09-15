@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "flask",
+  "installCommand": "python -m pip install -r requirements.txt",
+  "buildCommand": "python scripts/sync_vercel_public.py",
+  "functions": {
+    "app.py": {
+      "maxDuration": 30,
+      "excludeFiles": "{node_modules/**,.venv/**,dist/**,.git/**,.idea/**,public/**}"
+    }
+  }
+}

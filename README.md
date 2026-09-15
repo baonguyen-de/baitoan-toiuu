@@ -41,6 +41,29 @@ Mở **http://127.0.0.1:5000** (debug Flask tự reload khi sửa `cutting_stock
 
 Phải mở qua Flask. UI gọi `POST /api/suggest`; `npm run dev` (Vite :5173) **không** proxy API nên không chạy được solver.
 
+## Deploy Vercel
+
+Solver vẫn là Python (`cutting_stock.py` qua Flask). Vercel phục vụ HTML/JS/CSS từ CDN (`public/`, tạo lúc build) và chạy API trong một function Flask.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/baonguyen-de/baitoan-toiuu)
+
+1. Push repo lên GitHub (đã có `vercel.json`).
+2. Mở [vercel.com/new](https://vercel.com/new) → **Import** repo.
+3. Framework Preset: **Flask** — đã ghi trong `vercel.json`. Nếu dashboard nhận nhầm **Vite** (vì `package.json`), đổi lại thành Flask.
+4. Deploy. Không cần biến môi trường.
+
+Hoặc CLI (đã `npx vercel login`):
+
+```bash
+npx vercel --prod
+```
+
+`vercel.json` cài Python từ `requirements.txt`, chạy `python scripts/sync_vercel_public.py` (copy `index.html` + UI trong `src/` → `public/`), rồi deploy `app.py`.
+
+Hobby: thời gian chạy function mặc định ngắn (~10–30s). Đơn vài loại khổ, vài trăm tấm vẫn kịp. Đơn rất lớn trên Hobby có thể timeout — tăng `functions.app.py.maxDuration` (Pro).
+
+Local vẫn `python app.py`. Không dùng `npm run dev` trên Vercel.
+
 ### Dùng giao diện
 
 1. Trang tự load mẫu **Đơn chuẩn** (`chuan`) và gọi gợi ý cắt.
@@ -155,8 +178,10 @@ print(result["plans"][0]["metrics"])
 | `test_cutting_stock.py` | Test Python |
 | `THUAT_TOAN.md` | Từng hàm (xoay, knapsack, mix, pack, score) |
 | `AGENTS.md` | Quy ước khi sửa thuật toán |
+| `vercel.json` | Deploy Flask lên Vercel (không dùng Vite) |
+| `scripts/sync_vercel_public.py` | Copy UI vào `public/` lúc build Vercel |
 
-`.gitignore` loại `.venv/`, `node_modules/`, `dist/`, `__pycache__/`, IDE.
+`.gitignore` loại `.venv/`, `node_modules/`, `dist/`, `public/`, `__pycache__/`, IDE.
 
 ## Mục tiêu xếp hạng
 

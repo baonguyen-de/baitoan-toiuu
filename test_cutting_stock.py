@@ -1,6 +1,11 @@
+import subprocess
+import sys
 import unittest
+from pathlib import Path
 
 from cutting_stock import SAMPLE, assert_valid_plan, suggest_plans
+
+ROOT = Path(__file__).resolve().parent
 
 
 class TwoStageCutting(unittest.TestCase):
@@ -56,6 +61,15 @@ class TwoStageCutting(unittest.TestCase):
         for strip in mixed["sheets"][0]["strips"]:
             heights = {p["height"] for p in strip["pieces"]}
             self.assertEqual(heights, {strip["height"]})
+
+    def test_vercel_public_sync(self):
+        script = ROOT / "scripts" / "sync_vercel_public.py"
+        subprocess.check_call([sys.executable, str(script)])
+        public = ROOT / "public"
+        self.assertTrue((public / "index.html").is_file())
+        for name in ("main.js", "render.js", "examples.js", "style.css"):
+            self.assertTrue((public / "src" / name).is_file())
+        self.assertFalse((public / "src" / "solver.js").exists())
 
 
 if __name__ == "__main__":

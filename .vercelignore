@@ -1,0 +1,10 @@
+.venv
+venv
+node_modules
+__pycache__
+.idea
+.vscode
+dist
+*.pyc
+.pytest_cache
+.grok

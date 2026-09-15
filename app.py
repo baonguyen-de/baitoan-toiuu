@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Web: gọi cutting_stock.suggest_plans() rồi plot trên trình duyệt."""
+"""Web: gọi cutting_stock.suggest_plans() rồi plot trên trình duyệt.
+
+Vercel import `app` (WSGI). Local: python app.py
+"""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -13,14 +17,23 @@ ROOT = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=None)
 
 
+def _ui_dir() -> Path:
+    """Vercel CDN copies UI into public/; local `python app.py` uses the repo root."""
+    if os.environ.get("VERCEL"):
+        public = ROOT / "public"
+        if (public / "index.html").is_file():
+            return public
+    return ROOT
+
+
 @app.get("/")
 def index():
-    return send_from_directory(ROOT, "index.html")
+    return send_from_directory(_ui_dir(), "index.html")
 
 
 @app.get("/src/<path:name>")
 def src_files(name):
-    return send_from_directory(ROOT / "src", name)
+    return send_from_directory(_ui_dir() / "src", name)
 
 
 @app.get("/api/sample")
