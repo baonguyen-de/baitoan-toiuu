@@ -1,5 +1,7 @@
 # Hướng dẫn sử dụng — Bài toán tối ưu cắt
 
+**Version:** version_2
+
 Phần mềm gợi ý **cách cắt nhiều khổ hộp từ tấm carton nguyên**, theo đúng máy xưởng: **cắt ngang trước, rồi cắt dọc từng hàng**.
 
 Không cần hiểu thuật toán. Chỉ cần nhập kích thước tấm nguyên + đơn hàng, nhấn **Bắt đầu cắt**, rồi chọn phương án để xem sơ đồ và thứ tự nhát.
