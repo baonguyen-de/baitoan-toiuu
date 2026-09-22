@@ -38,6 +38,11 @@ export function pct(ratio) {
   return `${(ratio * 100).toFixed(1)}%`
 }
 
+export function pct2(ratio) {
+  const n = Number.isFinite(ratio) ? ratio : 0
+  return `${(n * 100).toFixed(2)}%`
+}
+
 export function area(n) {
   const r = Math.round(n * 100) / 100
   return Number.isInteger(r) ? String(r) : String(r)
@@ -61,10 +66,14 @@ export function renderPlanCards(plans, selectedId) {
           </div>
           ${plan.best ? `<div class="neon-pill">Cách tối ưu nhất</div>` : ""}
           <div class="plan-card__label">${esc(plan.label || "")}</div>
-          <div class="plan-card__waste">Rác ${area(m.scrapArea)}</div>
+          <div class="plan-card__kpis">
+            <div><span>Hiệu suất</span><b>${pct2(m.utilization)}</b></div>
+            <div><span>Hao hụt</span><b>${pct2(m.wasteRatio)}</b></div>
+          </div>
           <dl>
-            <div><dt>Dư có thể dùng lại</dt><dd>${esc(m.remnantLabel)}</dd></div>
-            <div><dt>Tổng phần Diện tích dư</dt><dd>${area(m.wasteArea)} (${pct(m.wasteRatio)})</dd></div>
+            <div><dt>Trim máy</dt><dd>${area(m.trimArea || 0)}</dd></div>
+            <div><dt>Scrap</dt><dd>${area(m.scrapArea)}</dd></div>
+            <div><dt>Remnant</dt><dd>${esc(m.remnantLabel)}</dd></div>
             <div><dt>Nhát cắt</dt><dd>${m.cutCount}</dd></div>
           </dl>
         </button>`
@@ -80,19 +89,35 @@ export function renderMetrics(plan) {
        </div>`
     : ""
   const best = plan.best
-    ? `<div class="banner banner--best"><span class="neon-pill">Cách tối ưu nhất</span> Ít rác / ít tấm / ít hàng cắt nhất trong các gợi ý.</div>`
+    ? `<div class="banner banner--best"><span class="neon-pill">Cách tối ưu nhất</span> Hiệu suất cao / ít tấm / ít hao hụt nhất trong các gợi ý.</div>`
     : ""
   return `
     ${best}
     ${unpack}
+    <div class="kpi-row">
+      <div class="kpi kpi--ok">
+        <span>Hiệu suất sử dụng</span>
+        <b>${pct2(m.utilization)}</b>
+        <em>${area(m.packedArea || m.usedArea)} / ${area(m.sheetArea)}</em>
+      </div>
+      <div class="kpi kpi--warn">
+        <span>Tỷ lệ hao hụt</span>
+        <b>${pct2(m.wasteRatio)}</b>
+        <em>${area(m.wasteArea)}</em>
+      </div>
+    </div>
+    <div class="waste-split">
+      <div><span>Trim máy</span><b>${area(m.trimArea || 0)}</b></div>
+      <div><span>Scrap (không tái sử dụng)</span><b>${area(m.scrapArea)}</b></div>
+      <div><span>Remnant (tái sử dụng)</span><b>${esc(m.remnantLabel)}</b></div>
+    </div>
     <div class="metrics">
       <div><span>Số lượng tấm nguyên dùng</span><b>${m.sheetCount}</b></div>
       <div><span>Số hàng ngang cắt</span><b>${m.stripCount}</b></div>
-      <div><span>Tổng Diện tích đã dùng</span><b>${area(m.usedArea)}</b></div>
-      <div><span>Tổng Diện tích còn lại</span><b>${area(m.wasteArea)} (${pct(m.wasteRatio)})</b></div>
-      <div><span> Tổng Diện tích không thể tái sử dụng</span><b>${area(m.scrapArea)}</b></div>
-      <div><span>Diện tích dư tái sử dụng</span><b>${esc(m.remnantLabel)}</b></div>
+      <div><span>Tổng diện tích đã dùng</span><b>${area(m.packedArea || m.usedArea)}</b></div>
+      <div><span>Khổ hữu dụng</span><b>${fmt(m.usableWidth)}×${fmt(m.usableHeight)}</b></div>
       <div><span>Đã xếp</span><b>${m.packedCount}/${m.demandCount}</b></div>
+      <div><span>Nhát cắt</span><b>${m.cutCount}</b></div>
     </div>
     <p class="plan-desc">
       ${esc(plan.desc.sheetTxt)}. ${esc(plan.desc.mixTxt)}.
@@ -100,12 +125,21 @@ export function renderMetrics(plan) {
     </p>`
 }
 
+function trimGuide(trim) {
+  const t = trim || {}
+  return `trái ${fmt(t.left || 0)}, phải ${fmt(t.right || 0)}, trên ${fmt(t.top || 0)}, dưới ${fmt(t.bottom || 0)}`
+}
+
 export function renderCuts(plan) {
+  const fallbackTrim = plan.metrics?.trim || {}
+  const origW = plan.origSheetWidth ?? plan.sheetWidth
+  const origH = plan.origSheetHeight ?? plan.sheetHeight
   const blocks = plan.cuts.map((c) => {
+    const trim = c.trim || fallbackTrim
     const h =
       c.horizontal.length === 0
-        ? "Không cần cắt ngang (một dải đúng chiều dài tấm)."
-        : `Cắt ngang xuyên tấm tại y = ${c.horizontal.map((y) => fmt(y)).join(", ")}`
+        ? "Không cần cắt ngang (một dải đúng chiều dài khổ hữu dụng)."
+        : `Cắt ngang xuyên khổ hữu dụng tại y = ${c.horizontal.map((y) => fmt(y)).join(", ")}`
     const v = c.vertical
       .map((strip) => {
         const pos =
@@ -115,11 +149,17 @@ export function renderCuts(plan) {
         return `<li>Dải ${strip.strip} (dài ${fmt(strip.height)}, từ y=${fmt(strip.y)}): ${pos}</li>`
       })
       .join("")
+    const swapNote =
+      plan.swapped || c.swapped
+        ? `<p><span class="tag tag-swap">Xoay hướng cắt</span> Xoay hướng cắt tấm nguyên rồi cắt trên bàn. Tờ vẫn ${fmt(origW)}×${fmt(origH)}.</p>`
+        : ""
     return `
       <section class="cuts-block">
-        <h3>Tấm ${c.sheet} · ${fmt(plan.sheetWidth)}×${fmt(plan.sheetHeight)}</h3>
-        <p><span class="tag tag-h">1. Ngang</span> ${esc(h)}</p>
-        <p><span class="tag tag-v">2. Dọc</span> Cắt từng dải (không cắt xuyên các dải khác):</p>
+        <h3>Tấm ${c.sheet} · ${fmt(origW)}×${fmt(origH)}</h3>
+        <p><span class="tag tag-trim">1. Xén biên máy</span> ${esc(trimGuide(trim))}</p>
+        ${swapNote}
+        <p><span class="tag tag-h">2. Ngang</span> ${esc(h)}</p>
+        <p><span class="tag tag-v">3. Dọc</span> Cắt từng dải (không cắt xuyên các dải khác):</p>
         <ul>${v}</ul>
       </section>`
   })
@@ -140,8 +180,9 @@ export function renderLegend(demand, colors) {
   return `
     <ul class="legend">
       ${items}
-      <li><i class="hatch remnant"></i> Diện tích dư tái sử dụng</li>
-      <li><i class="hatch scrap"></i> Diện tích không thể tái sử dụng</li>
+      <li><i class="hatch trim"></i> Trim máy (biên xén)</li>
+      <li><i class="hatch remnant"></i> Remnant — dư tái sử dụng</li>
+      <li><i class="hatch scrap"></i> Scrap — không tái sử dụng</li>
       <li><i class="line h"></i> Cắt ngang </li>
       <li><i class="line v"></i> Cắt dọc </li>
     </ul>`
@@ -156,6 +197,10 @@ function hatchPatterns(uid) {
     <pattern id="${uid}-remnant" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="10" height="10" fill="#efe6d4"/>
       <line x1="0" y1="0" x2="0" y2="10" stroke="#cbb892" stroke-width="2"/>
+    </pattern>
+    <pattern id="${uid}-trim" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#c5d0c8"/>
+      <path d="M0 0 L6 6 M6 0 L0 6" stroke="#4d6358" stroke-width="1.1"/>
     </pattern>`
 }
 
@@ -246,7 +291,7 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
   const clipped = mode === "used" && focusH < sheet.height - 0.001
   const sw = (n) => n / scale
 
-  const remnantTextSize = Math.min(sw(13), Math.max(sheet.remnant.height * 0.2, sw(9)))
+  const remnantTextSize = Math.min(sw(13), Math.max((sheet.remnant.height || 0) * 0.2, sw(9)))
   const remnantLabel =
     !clipped && sheet.remnant.height > 0.001
       ? `<text x="${sheet.remnant.x + sheet.remnant.width / 2}" y="${sheet.remnant.y + sheet.remnant.height / 2}" text-anchor="middle" font-size="${remnantTextSize}" fill="#6b542e">dư ${fmt(sheet.remnant.width)}×${fmt(sheet.remnant.height)}</text>`
@@ -256,12 +301,36 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
       ? `<rect class="remnant" x="${sheet.remnant.x}" y="${sheet.remnant.y}" width="${sheet.remnant.width}" height="${sheet.remnant.height}" fill="url(#${uid}-remnant)" stroke="#a89068" stroke-width="${sw(1.2)}"/>${remnantLabel}`
       : ""
 
+  const usable = sheet.usableRect || { x: 0, y: 0, width: sheet.width, height: sheet.height }
+  const trimZones = (sheet.trimZones || [])
+    .map((z) => {
+      const minSide = Math.min(z.width, z.height) * scale
+      const font = Math.max(7, Math.min(12, minSide * 0.42)) / scale
+      const cx = z.x + z.width / 2
+      const cy = z.y + z.height / 2
+      const sideways = z.side === "left" || z.side === "right"
+      const label =
+        minSide >= 10
+          ? `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="#24352c"${
+              sideways ? ` transform="rotate(-90 ${cx} ${cy})"` : ""
+            }>${esc(z.label || "TRIM")}</text>`
+          : ""
+      return `<g class="trim-zone">
+        <rect x="${z.x}" y="${z.y}" width="${z.width}" height="${z.height}" fill="url(#${uid}-trim)" stroke="#3d5248" stroke-width="${sw(0.9)}"/>
+        ${label}
+      </g>`
+    })
+    .join("")
+
   const strips = sheet.strips
     .map((strip) => {
+      const sr = strip.scrapRect
       const scrap =
-        strip.scrapWidth > 0.001
-          ? `<rect x="${strip.usedWidth}" y="${strip.y}" width="${strip.scrapWidth}" height="${strip.height}" fill="url(#${uid}-scrap)" stroke="#a89068" stroke-width="${sw(0.8)}"/>`
-          : ""
+        sr && sr.width > 0.001 && sr.height > 0.001
+          ? `<rect x="${sr.x}" y="${sr.y}" width="${sr.width}" height="${sr.height}" fill="url(#${uid}-scrap)" stroke="#a89068" stroke-width="${sw(0.8)}"/>`
+          : strip.scrapWidth > 0.001
+            ? `<rect x="${(strip.x ?? 0) + strip.usedWidth}" y="${strip.y}" width="${strip.scrapWidth}" height="${strip.height}" fill="url(#${uid}-scrap)" stroke="#a89068" stroke-width="${sw(0.8)}"/>`
+            : ""
       const pieces = strip.pieces
         .map((p) => {
           const fill = colors[p.key] || "#666"
@@ -278,25 +347,47 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
     .join("")
 
   const hCuts = []
-  let acc = 0
   for (const strip of sheet.strips) {
-    acc += strip.height
-    if (acc < sheet.height - 0.001) {
-      hCuts.push(
-        `<line x1="0" y1="${acc}" x2="${sheet.width}" y2="${acc}" stroke="#c0392b" stroke-width="${sw(2.6)}"/>`,
-      )
+    const ori = strip.orientation || "h"
+    if (ori === "h") {
+      const yb = strip.y + strip.height
+      if (yb < usable.y + usable.height - 0.001) {
+        hCuts.push(
+          `<line x1="${usable.x}" y1="${yb}" x2="${usable.x + usable.width}" y2="${yb}" stroke="#c0392b" stroke-width="${sw(2.6)}"/>`,
+        )
+      }
+    } else if (strip.pieces.length) {
+      for (const p of strip.pieces) {
+        const ye = p.y + p.height
+        if (ye < usable.y + usable.height - 0.001) {
+          hCuts.push(
+            `<line x1="${p.x}" y1="${ye}" x2="${p.x + p.width}" y2="${ye}" stroke="#c0392b" stroke-width="${sw(1.7)}"/>`,
+          )
+        }
+      }
     }
   }
 
   const vCuts = sheet.strips
     .flatMap((strip) => {
-      let x = 0
+      const ori = strip.orientation || "h"
       const lines = []
+      if (ori === "v") {
+        if (strip.pieces.length) {
+          const xb = strip.pieces[0].x + strip.pieces[0].width
+          if (xb < usable.x + usable.width - 0.001) {
+            lines.push(
+              `<line x1="${xb}" y1="${usable.y}" x2="${xb}" y2="${usable.y + usable.height}" stroke="#1a5276" stroke-width="${sw(2.6)}"/>`,
+            )
+          }
+        }
+        return lines
+      }
       for (const p of strip.pieces) {
-        x += p.width
-        if (x < sheet.width - 0.001) {
+        const xe = p.x + p.width
+        if (xe < usable.x + usable.width - 0.001) {
           lines.push(
-            `<line x1="${x}" y1="${strip.y}" x2="${x}" y2="${strip.y + strip.height}" stroke="#1a5276" stroke-width="${sw(1.7)}"/>`,
+            `<line x1="${xe}" y1="${strip.y}" x2="${xe}" y2="${strip.y + strip.height}" stroke="#1a5276" stroke-width="${sw(1.7)}"/>`,
           )
         }
       }
@@ -315,10 +406,13 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
           .join("")
       : ""
 
+  const origW = sheet.origSheetWidth ?? sheet.width
+  const origH = sheet.origSheetHeight ?? sheet.height
+  const swapNote = sheet.swapped ? " · xoay hướng cắt" : ""
   const caption =
     mode === "used"
       ? `Phóng vùng cắt · tấm ${sheetNo}`
-      : `Toàn tấm ${sheetNo} · ${fmt(sheet.width)}×${fmt(sheet.height)}`
+      : `Toàn tấm ${sheetNo} · ${fmt(origW)}×${fmt(origH)}${swapNote}`
 
   const axisMarkup = showAxes
     ? (() => {
@@ -377,6 +471,7 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
       <g transform="translate(${padL}, ${padT}) scale(${scale})">
         <g clip-path="url(#${uid}-clip)">
           <rect x="0" y="0" width="${sheet.width}" height="${sheet.height}" fill="#e2c48a" stroke="none"/>
+          ${trimZones}
           ${remnant}
           ${strips}
           ${vCuts}

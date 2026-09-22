@@ -68,16 +68,17 @@ Local vẫn `python app.py`. Không dùng `npm run dev` trên Vercel.
 
 1. Trang tự load mẫu **Đơn chuẩn** (`chuan`) và gọi gợi ý cắt.
 2. Sửa **Rộng × Dài** tấm nguyên và bảng **Các tấm cần cắt** (kí hiệu, rộng, dài, SL).
-3. Tích **Cho phép các tấm cắt xoay 90°** nếu không kỵ hướng sóng.
-4. **Thêm tấm cắt** / × để thêm-xóa dòng. SL phải nguyên dương.
-5. **Bắt đầu cắt** để tính lại. Cách đầu tiên là tốt nhất (`score_plan`).
-6. Chọn thẻ cách cắt bên phải để xem sơ đồ + hướng dẫn nhát.
+3. Nhập **Trim máy** (trái/phải/trên/dưới, mặc định 0) — biên xén bắt buộc, trừ trước khi xếp.
+4. Tích **Cho phép các tấm cắt xoay 90°** nếu không kỵ hướng sóng. Ô **xoay hướng cắt tấm nguyên** mặc định tắt.
+5. **Thêm tấm cắt** / × để thêm-xóa dòng. SL phải nguyên dương.
+6. **Bắt đầu cắt** để tính lại. Cách đầu tiên là tốt nhất (`score_plan`). Hai chỉ số nổi: hiệu suất / hao hụt.
+7. Chọn thẻ cách cắt bên phải để xem sơ đồ + hướng dẫn nhát (xén biên → ngang → dọc).
 
 Đơn vị (cm, mm…) tự chọn, miễn nhất quán.
 
 **Mẫu ví dụ** (`src/examples.js`):
 
-- Chip nổi bật: Ghép dư hàng, Ít tờ hơn, Gần lấp kín, Trộn không rác, Đơn xưởng, Xoay ghép hàng — các đơn để so sánh trộn hàng / tách khổ / xoay tấm.
+- Chip nổi bật: **Đơn poster 2200×3000**, Ghép dư hàng, Ít tờ hơn, Gần lấp kín, Trộn không rác, Đơn xưởng, Xoay ghép hàng.
 - Dropdown **Mẫu cơ bản**: Đơn chuẩn, Lấp kín, Trộn cùng dài, Phải xoay, Cấm xoay, Nhiều tấm, Khổ quá to, kích thước lẻ, …
 
 `GET /api/sample` ghi đè kích thước mẫu **Đơn chuẩn** bằng `SAMPLE` Python (A/B/C trên tấm 100×200).
@@ -89,7 +90,7 @@ Mỗi tấm có hai khung:
 - **Toàn tấm** — layout cả tờ, kể cả phần dư dưới.
 - **Phóng vùng cắt** — zoom phần đã xếp, có trục Rộng / Dài.
 
-Lăn chuột zoom, kéo để xem, nút ± / Vừa khung. Màu theo kí hiệu khổ; gạch chéo đậm = scrap (không tái sử dụng), gạch nhạt = remnant (tái sử dụng). Đường đỏ = cắt ngang, xanh = cắt dọc.
+Lăn chuột zoom, kéo để xem, nút ± / Vừa khung. Màu theo kí hiệu khổ; gạch xanh xám = trim máy, gạch chéo đậm = scrap (không tái sử dụng), gạch nhạt = remnant (tái sử dụng). Đường đỏ = cắt ngang, xanh = cắt dọc. Trục luôn **Rộng** (ngang) / **Dài** (dọc) theo số đã nhập.
 
 ## Kiểm thử
 
@@ -132,6 +133,9 @@ curl -s -X POST http://127.0.0.1:5000/api/suggest \
       {"name": "B", "width": 5, "height": 10, "quantity": 15},
       {"name": "C", "width": 2, "height": 3, "quantity": 20}
     ],
+    "trim": {"left": 0, "right": 0, "top": 0, "bottom": 0},
+    "allowPieceRotation": true,
+    "allowSheetRotation": false,
     "allowRotation": true,
     "maxPlans": 6
   }'
@@ -141,9 +145,12 @@ Body `POST /api/suggest`:
 
 | Field | Mặc định | Nghĩa |
 |---|---|---|
-| `sheet` | `{}` | `{width, height}` |
+| `sheet` | `{}` | `{width, height}` — Rộng × Dài, không đổi nhãn |
+| `trim` | `0` | `{left, right, top, bottom}` ≥ 0 — biên xén máy, trừ trước |
 | `items` | `[]` | `[{name, width, height, quantity}, ...]` |
-| `allowRotation` | `true` | xoay khổ 90° |
+| `allowPieceRotation` | `true` | xoay từng BTP 90° |
+| `allowSheetRotation` | `false` | thử xoay hướng cắt tấm nguyên |
+| `allowRotation` | `true` | **cũ** — map sang `allowPieceRotation` |
 | `maxPlans` | `6` | số cách trả về |
 
 Lỗi nhập: `{ ok: false, errors, plans: [] }`.
@@ -159,7 +166,7 @@ Gọi trực tiếp từ Python:
 ```python
 from cutting_stock import SAMPLE, suggest_plans
 
-result = suggest_plans(SAMPLE["sheet"], SAMPLE["items"], allow_rotation=True)
+result = suggest_plans(SAMPLE["sheet"], SAMPLE["items"], allow_rotation=True, allow_sheet_rotation=False)
 print(result["plans"][0]["metrics"])
 ```
 
@@ -189,12 +196,13 @@ print(result["plans"][0]["metrics"])
 
 1. Ít khổ chưa xếp (`unpacked`)
 2. Ít tấm nguyên
-3. Ít vụn trong hàng (`scrapArea` — không tái sử dụng)
-4. Ít dải / hàng ngang
-5. Ít nhát cắt
-6. Ít tổng hao phí (`wasteArea`)
+3. Ít `wasteRatio` / cao `utilization` (tính trên tấm nguyên đầy đủ, gồm trim)
+4. Ít vụn trong hàng (`scrapArea`)
+5. Remnant lớn (`-remnantArea`)
+6. Ít dải / hàng ngang
+7. Ít nhát cắt
 
-Phần dư dưới cùng tấm (remnant) tái sử dụng được — tốt hơn vụn kẹt trong hàng.
+Trim ≠ scrap ≠ remnant. Không tăng hiệu suất bằng cách bỏ trim hay đổi nhãn Rộng/Dài.
 
 Ba kiểu xếp dải: tách khổ (`mix=False`), trộn hàng cùng chiều dài (`mix=True`), xếp cùng khổ rồi trộn phần dư (`mix="backfill"`).
 

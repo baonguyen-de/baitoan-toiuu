@@ -1,5 +1,21 @@
 export const EXAMPLES = [
   {
+    id: "poster",
+    name: "Đơn poster 2200×3000",
+    title: "Trim trái/phải 25 mm, A/B/C cùng dài 1000 — 1 tấm, hiệu suất 97.73%, hao hụt 2.27%",
+    highlight: true,
+    allowRotation: false,
+    allowPieceRotation: false,
+    allowSheetRotation: false,
+    sheet: { width: 2200, height: 3000 },
+    trim: { left: 25, right: 25, top: 0, bottom: 0 },
+    items: [
+      { name: "A", width: 700, height: 1000, quantity: 3 },
+      { name: "B", width: 800, height: 1000, quantity: 3 },
+      { name: "C", width: 650, height: 1000, quantity: 3 },
+    ],
+  },
+  {
     id: "gep-du",
     name: "Ghép dư hàng",
     title: "Trộn 60×50 với 40×50 lấp kín ngang: 1 tấm, 0 rác — tách khổ phải 2 tấm",
@@ -60,7 +76,7 @@ export const EXAMPLES = [
   {
     id: "don-xuong",
     name: "Đơn xưởng",
-    title: "7 khổ, 144 tấm: trộn + xoay tấm giảm rác so với tách khổ",
+    title: "7 khổ, 144 tấm: trộn hàng giảm rác so với tách khổ",
     highlight: true,
     allowRotation: true,
     sheet: { width: 100, height: 140 },
@@ -77,9 +93,11 @@ export const EXAMPLES = [
   {
     id: "xoay-ghep",
     name: "Xoay ghép hàng",
-    title: "Xoay tấm nguyên rồi trộn hàng, rác ít hơn tách khổ",
+    title: "Xoay hướng cắt tấm nguyên rồi trộn hàng, rác ít hơn tách khổ",
     highlight: true,
     allowRotation: true,
+    allowPieceRotation: true,
+    allowSheetRotation: true,
     sheet: { width: 80, height: 160 },
     items: [
       { name: "A", width: 50, height: 30, quantity: 8 },

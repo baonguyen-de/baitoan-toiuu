@@ -15,14 +15,22 @@ Bạn có:
 - Tấm carton nguyên (cùng một khổ, dùng bao nhiêu tờ cũng được)
 - Danh sách tấm hộp cần cắt (kí hiệu, rộng, dài, số lượng)
 
-Phần mềm trả về vài **cách cắt**. Cách đầu tiên (nhãn **Cách tối ưu nhất**) thường là lựa chọn nên dùng: đủ đơn nhất, ít tờ nhất, ít rác kẹt trong hàng nhất.
+Phần mềm trả về vài **cách cắt**. Cách đầu tiên (nhãn **Cách tối ưu nhất**) thường là lựa chọn nên dùng: đủ đơn nhất, ít tờ nhất, hiệu suất cao nhất, ít scrap kẹt trong hàng nhất.
 
-Máy **không** cắt kiểu xếp lộn xộn. Chỉ đúng 2 bước:
+Hai chỉ số nổi trên kết quả (2 chữ số thập phân):
 
-1. Cắt **ngang xuyên suốt tấm** → tách thành các **hàng** (dải) cùng chiều dài.
-2. Cắt **dọc từng hàng** → ra từng tấm hộp. Không cắt dọc xuyên sang hàng khác.
+- **Hiệu suất sử dụng** = diện tích BTP đã xếp / diện tích tấm nguyên **đầy đủ** (gồm trim)
+- **Tỷ lệ hao hụt** = phần không thành BTP / diện tích tấm nguyên đầy đủ
+
+Máy **không** cắt kiểu xếp lộn xộn. Đúng 3 bước:
+
+1. **Xén biên máy (Trim)** — trừ trước, không phải phần dư sau khi xếp.
+2. Cắt **ngang xuyên suốt khổ hữu dụng** → tách thành các **hàng** (dải) cùng chiều dài.
+3. Cắt **dọc từng hàng** → ra từng tấm hộp. Không cắt dọc xuyên sang hàng khác.
 
 Trong một hàng, mọi tấm phải **cùng chiều dài**. Nếu lệch hàng, nhát ngang sẽ hư hộp.
+
+Ô **Rộng** / **Dài** của tấm nguyên luôn giữ đúng số bạn gõ. Thuật toán không đổi chỗ nhãn.
 
 ---
 
@@ -32,11 +40,29 @@ Mở trang web của phần mềm (máy bạn: chạy `python app.py` rồi vào
 
 ### Bước 1 — Tấm nguyên
 
-Nhập **Rộng × Dài** của tờ carton bán thành phẩm.
+Nhập **Rộng × Dài** của tờ carton bán thành phẩm. **Rộng** = cạnh ngang, **Dài** = cạnh kia — đúng số vừa gõ, không bị đổi chỗ.
 
-Đơn vị tự chọn (cm, mm…), **miễn dùng cùng đơn vị** cho tấm nguyên và mọi tấm cắt.
+Đơn vị tự chọn (cm, mm…), **miễn dùng cùng đơn vị** cho tấm nguyên, trim và mọi tấm cắt.
 
-### Bước 2 — Các tấm cần cắt
+### Bước 2 — Thông số máy xén (Trim)
+
+Trim là **biên xén bắt buộc của máy**, khai báo trước rồi trừ ra, rồi mới xếp BTP vào **khổ hữu dụng**.
+
+- Mục đích: tránh nhăn / cấn mép BTP, giữ mép thành phẩm ổn định.
+- Máy khác nhau trim khác nhau; có máy biên lớn. Đây là **ràng buộc máy**, không phải kết quả xếp.
+- **Không** lấy khe còn lại sau khi nhét BTP rồi gọi là Trim.
+
+Nhập **Trái / Phải / Trên / Dưới** (mặc định 0). Dòng **Khổ hữu dụng** = Rộng − trái − phải, Dài − trên − dưới.
+
+Sau khi xếp, chỗ trống **trong khổ hữu dụng** tách 2 loại, khác Trim:
+
+| Loại | Nghĩa |
+|---|---|
+| **Trim máy** | Biên xén bắt buộc, trừ trước |
+| **Scrap** | Vụn trong hàng, không tái sử dụng |
+| **Remnant** | Dải nguyên còn lại, tái sử dụng được |
+
+### Bước 3 — Các tấm cần cắt
 
 Mỗi dòng một khổ hộp:
 
@@ -50,13 +76,14 @@ Mỗi dòng một khổ hộp:
 - **Thêm tấm cắt**: thêm dòng
 - **×**: xóa dòng
 
-### Bước 3 — Xoay 90°
+### Bước 4 — Hai loại xoay (tách riêng)
 
-Tích **Cho phép các tấm cắt xoay 90°** nếu hộp **không kỵ hướng sóng**.
+- **Cho phép các tấm cắt xoay 90°** (`allowPieceRotation`) — xoay từng BTP. Ô vẽ có dấu ↻; cột đơn hàng **không** đổi Rộng/Dài.
+- **Cho phép xoay hướng cắt tấm nguyên** (`allowSheetRotation`) — thuật toán được thử đổi cạnh cắt ngang của tờ. Mặc định **tắt** (tránh bug V1 đổi 2200×3000 thành 3000×2200). Khi dùng, thẻ ghi **xoay hướng cắt tấm nguyên**; tờ vẫn Rộng × Dài như đã nhập.
 
-Tắt ô này khi giấy có hướng sóng bắt buộc (xoay sẽ làm hộp yếu / sai quy cách).
+Tắt xoay BTP khi giấy có hướng sóng bắt buộc.
 
-### Bước 4 — Bắt đầu cắt
+### Bước 5 — Bắt đầu cắt
 
 Nhấn **Bắt đầu cắt**. Bên phải hiện các thẻ phương án.
 
@@ -72,11 +99,10 @@ Mỗi thẻ là một phương án. Cách **1** có nhãn **Cách tối ưu nh�
 
 Trên thẻ bạn thấy:
 
+- **Hiệu suất sử dụng** và **Tỷ lệ hao hụt** (2 chữ số thập phân + %)
 - Số **tấm nguyên** dùng và số **hàng** cắt
-- Kiểu xếp: **tách khổ** / **trộn hàng** / **dư hàng trộn** (và có thể **xoay tấm**)
-- **Rác** — phần vụn kẹt trong hàng, **không** tái sử dụng được
-- **Dư có thể dùng lại** — dải nguyên còn lại dưới tờ
-- **Tổng phần diện tích dư** — rác + phần dư
+- Kiểu xếp: **tách khổ** / **trộn hàng** / **dư hàng trộn** (và có thể **xoay hướng cắt tấm nguyên**)
+- **Trim máy** / **Scrap** / **Remnant** — ba loại diện tích khác nhau
 - **Nhát cắt** — số đường máy phải cắt
 
 Nếu thẻ có cảnh báo **Chưa cắt hết**: một số khổ không vừa tấm (kể cả khi xoay). Cần tấm nguyên lớn hơn, hoặc bật xoay, hoặc bỏ khổ đó.
@@ -85,15 +111,17 @@ Nếu thẻ có cảnh báo **Chưa cắt hết**: một số khổ không vừa
 
 | Chỉ số | Đọc thế nào |
 |---|---|
+| Hiệu suất sử dụng | packed / (số tờ × Rộng × Dài), gồm trim |
+| Tỷ lệ hao hụt | 1 − hiệu suất |
+| Trim máy | Biên xén bắt buộc, trừ trước khi xếp |
+| Scrap | Vụn kẹt **trong hàng** — không tái sử dụng |
+| Remnant | Dải nguyên còn lại — tái sử dụng được |
 | Số lượng tấm nguyên dùng | Cần lấy bao nhiêu tờ carton |
 | Số hàng ngang cắt | Máy cắt ngang bao nhiêu dải |
-| Tổng diện tích đã dùng | Diện tích các hộp đã xếp |
-| Tổng diện tích còn lại | Phần không thành hộp (rác + dư) |
-| Diện tích không thể tái sử dụng | Vụn kẹt **trong hàng** — bỏ |
-| Diện tích dư tái sử dụng | Khổ còn lại **cả tờ phía dưới** — để đơn sau |
+| Khổ hữu dụng | Tấm sau khi trừ trim |
 | Đã xếp | Số hộp xếp được / số hộp trên đơn |
 
-**Nên ưu tiên:** đủ đơn → ít tờ → ít rác trong hàng → phần dư dưới tờ càng lớn càng tốt (còn dùng lại).
+**Nên ưu tiên:** đủ đơn → ít tờ → hiệu suất cao (hao hụt thấp) → ít scrap → remnant lớn → ít hàng → ít nhát.
 
 ### Sơ đồ
 
@@ -113,17 +141,19 @@ Màu sắc theo kí hiệu khổ. Ký hiệu **↻** trên tấm = khổ đó đ
 | Trên sơ đồ | Nghĩa |
 |---|---|
 | Ô màu đặc | Tấm hộp đã xếp |
-| Gạch chéo **đậm** | Rác trong hàng — không tái sử dụng |
-| Gạch chéo **nhạt** | Phần dư dưới tờ — tái sử dụng được |
-| Đường **đỏ** | Cắt ngang xuyên tấm |
+| Gạch **chéo chéo (xanh xám)** | Trim máy — biên xén, không nhầm scrap |
+| Gạch chéo **đậm** | Scrap trong hàng — không tái sử dụng |
+| Gạch chéo **nhạt** | Remnant — tái sử dụng được |
+| Đường **đỏ** | Cắt ngang xuyên khổ hữu dụng |
 | Đường **xanh** | Cắt dọc trong một hàng |
 
 ### Hướng dẫn thứ tự cắt
 
 Làm đúng thứ tự này trên máy:
 
-1. **Ngang** — cắt xuyên tấm tại các vị trí `y` (tách thành hàng).
-2. **Dọc** — lấy từng hàng, cắt tại các vị trí `x` (ra từng hộp). Không cắt xuyên hàng khác.
+1. **Xén biên máy** — trim trái / phải / trên / dưới như đã khai.
+2. **Ngang** — cắt xuyên khổ hữu dụng tại các vị trí `y` (tách thành hàng).
+3. **Dọc** — lấy từng hàng, cắt tại các vị trí `x` (ra từng hộp). Không cắt xuyên hàng khác.
 
 `Tấm 1`, `Tấm 2`… là từng tờ carton nguyên.
 
@@ -138,7 +168,7 @@ Phần mềm tự thử nhiều kiểu, rồi chọn kiểu tốt. Nhãn trên t
 | **Tách khổ** | Mỗi hàng chỉ một loại hộp | Cắt đồng loạt cùng size, dễ làm |
 | **Trộn hàng** | Trong một hàng trộn vài khổ **cùng chiều dài** | Lấp kín ngang, giảm rác |
 | **Dư hàng trộn** | Xếp cùng khổ trước, khe ngang còn lại mới nhét khổ khác cùng dài | Vừa dễ cắt, vừa tận dụng khe |
-| **Xoay tấm** | Xoay cả tờ nguyên 90° (đổi cạnh cắt ngang) | Đôi khi ghép hàng kín hơn |
+| **Xoay hướng cắt tấm nguyên** | Thử cạnh cắt ngang khác của tờ (tờ vẫn Rộng × Dài như nhập) | Đôi khi ghép hàng kín hơn |
 
 Chỉ trộn được khi các hộp **cùng chiều dài hàng**. Xoay 90° đôi khi giúp hai khổ khác nhau thành cùng chiều dài.
 
@@ -178,8 +208,11 @@ Một đường máy phải cắt (ngang hoặc dọc). Ít nhát = làm nhanh h
 **Xoay 90° (tấm cắt)**  
 Đổi chỗ rộng và dài của hộp khi đặt lên hàng. Dùng khi không kỵ hướng sóng.
 
-**Xoay tấm (tấm nguyên)**  
-Xoay cả tờ carton 90° trước khi cắt. Cạnh cắt ngang đổi.
+**Xoay hướng cắt tấm nguyên**  
+Thuật toán thử đổi cạnh cắt ngang của tờ. Không đổi ô nhập Rộng/Dài, không đổi tên trục. Thẻ ghi rõ khi dùng.
+
+**Trim / biên xén máy**  
+Phần mép bắt buộc máy phải xén **trước khi xếp**. Không phải khe còn lại sau packing.
 
 **Hướng sóng**  
 Hướng gân giấy carton. Nhiều hộp bắt buộc sóng chạy dọc hoặc ngang nhất định — lúc đó **tắt** xoay.
@@ -227,7 +260,7 @@ Sơ đồ zoom phần đã xếp hộp, có thước Rộng / Dài.
 - Đơn vị đo phải **thống nhất** trong một lần tính (đừng trộn cm với mm).
 - SL phải là số nguyên (3 tấm, không phải 3.5).
 - Khổ lớn hơn tấm nguyên (kể cả xoay) → không có sơ đồ, có thông báo rõ.
-- **Rác ít** quan trọng hơn **phần dư dưới tờ lớn**: phần dư còn dùng, rác thì bỏ.
+- **Scrap ít** quan trọng hơn **remnant lớn**: remnant còn dùng, scrap thì bỏ. Trim là biên máy, không phải dư sau xếp.
 - Trộn hàng tiết kiệm giấy hơn nhưng trên máy phải cắt **nhiều size trong cùng một hàng**. Nếu xưởng muốn cắt đồng loạt một size, chọn thẻ **tách khổ**.
 - Mẫu ví dụ chỉ để thử phần mềm, không phải đơn sản xuất.
 
@@ -239,11 +272,12 @@ Chip nổi bật (so sánh kiểu xếp):
 
 | Mẫu | Để thấy gì |
 |---|---|
+| Đơn poster 2200×3000 | Trim trái/phải 25 mm; A 700 / B 800 / C 650 × 1000 SL3 — 1 tấm, hiệu suất 97,73%, hao hụt 2,27% |
 | Ghép dư hàng | Trộn hai khổ cùng dài thì 1 tờ, tách khổ phải 2 tờ |
 | Ít tờ hơn | Đôi khi tách khổ dùng ít tờ hơn trộn |
 | Gần lấp kín / Trộn không rác | Lấp ngang, rác ≈ 0 |
 | Đơn xưởng | Đơn nhiều khổ, gần thực tế |
-| Xoay ghép hàng | Xoay tờ nguyên rồi trộn, rác giảm |
+| Xoay ghép hàng | Xoay hướng cắt tấm nguyên rồi trộn, rác giảm |
 
 Dropdown **Mẫu cơ bản**: Đơn chuẩn, Lấp kín, Phải xoay, Cấm xoay, Khổ quá to, Kích thước lẻ, …
 

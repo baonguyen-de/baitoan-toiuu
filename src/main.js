@@ -12,9 +12,30 @@ import {
 
 const $ = (sel) => document.querySelector(sel)
 
+function samplePieceRotation(sample) {
+  if (sample.allowPieceRotation != null) return Boolean(sample.allowPieceRotation)
+  return sample.allowRotation !== false
+}
+
+function sampleSheetRotation(sample) {
+  return sample.allowSheetRotation === true
+}
+
+function sampleTrim(sample) {
+  const t = sample.trim || {}
+  return {
+    left: Number(t.left) || 0,
+    right: Number(t.right) || 0,
+    top: Number(t.top) || 0,
+    bottom: Number(t.bottom) || 0,
+  }
+}
+
 const state = {
   sample: EXAMPLES[0],
-  allowRotation: EXAMPLES[0].allowRotation !== false,
+  allowPieceRotation: samplePieceRotation(EXAMPLES[0]),
+  allowSheetRotation: sampleSheetRotation(EXAMPLES[0]),
+  trim: sampleTrim(EXAMPLES[0]),
   items: EXAMPLES[0].items.map((it, i) => ({ ...it, id: i + 1 })),
   nextId: EXAMPLES[0].items.length + 1,
   result: null,
@@ -25,11 +46,45 @@ function itemName(it) {
   return (it.name || "").trim() || `${fmt(Number(it.width) || 0)}×${fmt(Number(it.height) || 0)}`
 }
 
+function updateUsableLine() {
+  const el = $("#usable-size")
+  if (!el) return
+  const w = Number($("#sheet-w").value)
+  const h = Number($("#sheet-h").value)
+  const t = {
+    left: Number($("#trim-l")?.value) || 0,
+    right: Number($("#trim-r")?.value) || 0,
+    top: Number($("#trim-t")?.value) || 0,
+    bottom: Number($("#trim-b")?.value) || 0,
+  }
+  const uw = w - t.left - t.right
+  const uh = h - t.top - t.bottom
+  if (!(w > 0) || !(h > 0)) {
+    el.textContent = "Khổ hữu dụng: —"
+    el.classList.remove("is-bad")
+    return
+  }
+  if (uw <= 0 || uh <= 0) {
+    el.textContent = "Khổ hữu dụng không hợp lệ (trim lớn hơn tấm nguyên)."
+    el.classList.add("is-bad")
+    return
+  }
+  el.textContent = `Khổ hữu dụng: ${fmt(uw)} × ${fmt(uh)}`
+  el.classList.remove("is-bad")
+}
+
 function renderForm() {
   const sample = state.sample
+  const trim = state.trim || sampleTrim(sample)
   $("#sheet-w").value = state.sheetW ?? sample.sheet.width
   $("#sheet-h").value = state.sheetH ?? sample.sheet.height
-  $("#allow-rot").checked = state.allowRotation
+  if ($("#trim-l")) $("#trim-l").value = trim.left
+  if ($("#trim-r")) $("#trim-r").value = trim.right
+  if ($("#trim-t")) $("#trim-t").value = trim.top
+  if ($("#trim-b")) $("#trim-b").value = trim.bottom
+  $("#allow-rot").checked = state.allowPieceRotation
+  if ($("#allow-sheet-rot")) $("#allow-sheet-rot").checked = state.allowSheetRotation
+  updateUsableLine()
   const body = state.items
     .map(
       (it) => `
@@ -55,7 +110,14 @@ function escapeAttr(s) {
 function readForm() {
   state.sheetW = Number($("#sheet-w").value)
   state.sheetH = Number($("#sheet-h").value)
-  state.allowRotation = $("#allow-rot").checked
+  state.allowPieceRotation = $("#allow-rot").checked
+  state.allowSheetRotation = Boolean($("#allow-sheet-rot")?.checked)
+  state.trim = {
+    left: Number($("#trim-l")?.value) || 0,
+    right: Number($("#trim-r")?.value) || 0,
+    top: Number($("#trim-t")?.value) || 0,
+    bottom: Number($("#trim-b")?.value) || 0,
+  }
   $("#item-body")
     .querySelectorAll("tr")
     .forEach((tr) => {
@@ -128,8 +190,11 @@ async function compute() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sheet: { width: state.sheetW, height: state.sheetH },
+        trim: state.trim,
         items,
-        allowRotation: state.allowRotation,
+        allowPieceRotation: state.allowPieceRotation,
+        allowSheetRotation: state.allowSheetRotation,
+        allowRotation: state.allowPieceRotation,
         maxPlans: 6,
       }),
     })
@@ -216,7 +281,9 @@ function loadSampleById(id) {
   state.sample = sample
   state.sheetW = sample.sheet.width
   state.sheetH = sample.sheet.height
-  state.allowRotation = sample.allowRotation !== false
+  state.trim = sampleTrim(sample)
+  state.allowPieceRotation = samplePieceRotation(sample)
+  state.allowSheetRotation = sampleSheetRotation(sample)
   state.items = sample.items.map((it, i) => ({ ...it, id: i + 1 }))
   state.nextId = state.items.length + 1
   state.result = null
@@ -273,6 +340,9 @@ async function init() {
   $("#order-form").addEventListener("submit", (ev) => {
     ev.preventDefault()
     compute()
+  })
+  ;["sheet-w", "sheet-h", "trim-l", "trim-r", "trim-t", "trim-b"].forEach((id) => {
+    $(`#${id}`)?.addEventListener("input", updateUsableLine)
   })
   loadSampleById("chuan")
 }

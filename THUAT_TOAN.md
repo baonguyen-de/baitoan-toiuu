@@ -11,13 +11,14 @@ Toạ độ sau layout: gốc **trên-trái**, `x` tăng sang phải (Rộng), `
 Luồng:
 
 ```
-normalize
-    → mỗi hướng tấm nguyên (giữ / xoay 90°)
-        → each_assignment (hướng xoay từng khổ)
+normalize (sheet + trim → khổ hữu dụng)
+    → packing_options: giữ tờ / (nếu allowSheetRotation) xoay hướng cắt + remap trim
+        → each_assignment (xoay từng BTP trên khổ hữu dụng)
             → candidate_from
-                  make_strips_*     (tạo dải)
+                  make_strips_*     (capacity = usableW)
                       fill_strip / knapsack_*
-                  pack_strips_into_sheets + layout_sheet
+                  pack_strips_into_sheets + layout_sheet (offset trim)
+                  nếu swapped: transform về tờ vật lý origW×origH
                   metrics_of, build_cuts, score_plan
     → lọc trùng (layout_hash) → xếp theo score → tối đa max_plans
 ```
@@ -26,13 +27,15 @@ normalize
 
 ## 1. Điểm vào
 
-### `suggest_plans(sheet_input, items_input, allow_rotation=True, max_plans=6)`
+### `suggest_plans(sheet_input, items_input, allow_rotation=True, max_plans=6, trim_input=None, allow_piece_rotation=None, allow_sheet_rotation=False)`
 
 Sinh vài cách cắt, **cách đầu tiên là tốt nhất**.
 
-1. `normalize` — lỗi thì `{ok: False, errors, plans: []}`.
-2. Duyệt 2 hướng tấm nguyên (giữ / xoay 90° — `swapped`).
-3. Với mỗi hướng tấm, `each_assignment` duyệt hướng xoay từng khổ.
+`allow_rotation` (cũ) map sang `allow_piece_rotation`. `allow_sheet_rotation` mặc định **False**.
+
+1. `normalize` (kèm trim) — lỗi thì `{ok: False, errors, plans: []}`. Khổ hữu dụng ≤ 0 → lỗi rõ.
+2. Duyệt hướng tờ: luôn giữ orig W×H. Nếu `allow_sheet_rotation`, thêm phương án xoay hướng cắt (remap trim theo cạnh vật lý, **không** đổi 2200×3000 thành 3000×2200).
+3. Với mỗi hướng, `each_assignment` duyệt xoay từng BTP trên **khổ hữu dụng**.
 4. Mỗi assignment thử 3 `mix` × vài `fill_mode` × 2 `bin_mode`:
 
    | Tham số | Giá trị | Ý nghĩa |
@@ -44,21 +47,24 @@ Sinh vài cách cắt, **cách đầu tiên là tốt nhất**.
    `mix` khác `True` vẫn truyền `fill_mode="dp"` vào `candidate_from` nhưng homogeneous không dùng; backfill tự gọi `fill_strip(..., "dp")` cho khe dư.
 
 5. Gộp plan trùng `layout_hash`, giữ bản `score_plan` nhỏ hơn.
-6. Sort lexicographic, lấy `max_plans` cái. Gán `id=plan-N`, `title=Cách N`, `best=(N==1)`, `label` = `mix_label` + `"xoay tấm"` nếu `swapped`.
+6. Sort lexicographic, lấy `max_plans` cái. Gán `id=plan-N`, `title=Cách N`, `best=(N==1)`, `label` = `mix_label` + `"xoay hướng cắt tấm nguyên"` nếu `swapped`.
 
 `fill_modes_mixed`: kích thước gần nguyên (`all_ints`) thì `["dp", "wide"]`, không thì `["wide", "narrow"]` (DP làm tròn số nguyên).
 
-Không xếp được khổ nào: `{ok: True, plans: [], message: "Không xếp được khổ nào vào tấm (kể cả khi xoay). ..."}`.
+Không xếp được khổ nào: `{ok: True, plans: [], message: "Không xếp được khổ nào vào khổ hữu dụng (kể cả khi xoay). ..."}`.
 
 ---
 
 ## 2. Chuẩn hoá & hướng xoay
 
-### `normalize(sheet_input, items_input)`
+### `normalize(sheet_input, items_input, trim_input=None)`
 
 Ép `width/height/quantity` sang số, kiểm tra dương; SL phải nguyên. Tên trống → `"{w}×{h}"`. Gán `key = "{name}::{w}x{h}"`.
 
-Trả `(errors, sheet, items)`.
+Trim `{left,right,top,bottom}` ≥ 0, mặc định 0.  
+`usableW = width − left − right`, `usableH = height − top − bottom`. ≤ 0 → lỗi.
+
+Trả `(errors, sheet, items)` với `sheet` có `trim`, `usableWidth`, `usableHeight`.
 
 ### `orientations_for(item, sheet_w, sheet_h, allow_rotation)`
 
@@ -100,7 +106,7 @@ Sort theo `width` (rộng trước hoặc hẹp trước), lần lượt lấy t
 
 DP bounded-per-type (trần `qty`): tại mỗi độ rộng `w` giữ packing **nhiều tấm nhất**. Kết quả cuối: **độ rộng đã dùng lớn nhất** còn reachable (đầy dải), không phải “nhiều tấm nhất trên mọi packing”.
 
-Làm tròn `capacity` / `width` sang int. Fallback `knapsack_greedy(..., wide_first=True)` khi `capacity > 900` hoặc `Σ qty × (W+1) > 250_000`.
+Làm tròn `capacity` / `width` sang int. Fallback `knapsack_greedy(..., wide_first=True)` khi `capacity > 20_000` hoặc `Σ qty × (W+1) > 250_000` (trần 900 cũ quá thấp cho khổ mm, vd. hữu dụng 2150).
 
 ### `fill_strip(capacity, types, integer_mode, fill_mode)`
 
@@ -152,15 +158,17 @@ Dải cao hơn tấm → `{sheets: [], leftoverStrips: strips}` → candidate b�
 
 Tấm mới khi không nhét được dải vào tấm cũ. `leftoverStrips` luôn `[]` khi thành công (mọi dải đều vào bin).
 
-### `layout_sheet(strips, sheet_w, sheet_h)`
+### `layout_sheet(strips, pack_opt)`
 
-Gán toạ độ:
+Pack trên khổ hữu dụng, cộng offset trim:
 
-- Dải từ trên xuống (`y` tăng).
-- Tấm trong dải trái → phải (`x` tăng).
-- `scrapWidth = sheet_w - usedWidth` (vụn trong hàng).
-- `usedHeight` = tổng chiều dài dải.
-- `remnant` = dải nguyên còn lại dưới cùng `{x:0, y, width: sheet_w, height}`.
+- Dải từ `y = trim.top` xuống.
+- Tấm trong dải từ `x = trim.left` sang phải.
+- `scrapRect` = khe còn lại **trong hàng hữu dụng** (không phải Trim).
+- `remnant` = dải nguyên còn lại trong khổ hữu dụng.
+- `trimZones` + `usableRect` trên tờ đầy đủ orig W×H.
+
+Nếu `swapped`: `transform_sheet_to_original` đưa geometry về tờ vật lý; `sheetWidth/Height` luôn orig.
 
 ---
 
@@ -170,25 +178,32 @@ Gán toạ độ:
 
 1. Σ `unpacked.quantity`
 2. `sheetCount`
-3. `scrapArea`
-4. `stripCount`
-5. `cutCount`
-6. `wasteArea`
+3. `wasteRatio` (hay −utilization) — trên tấm nguyên đầy đủ, gồm trim
+4. `scrapArea`
+5. `-remnantArea`
+6. `stripCount`
+7. `cutCount`
 
 `better_score(a, b)` = `a < b` (so tuple).
 
-### `metrics_of(sheets, items, sheet_w, sheet_h)`
+### `metrics_of(sheets, items, orig_w, orig_h, trim, cut_count=None)`
+
+Tính trên diện tích tấm nguyên **đầy đủ** (gồm trim):
 
 | Field | Nghĩa |
 |---|---|
 | `sheetCount` | số tấm nguyên |
 | `stripCount` | tổng số dải |
-| `usedArea` | Σ rộng×dài tấm đã xếp |
-| `sheetArea` | `sheetCount × W × H` |
-| `wasteArea` | `sheetArea − usedArea` (= scrap + remnant) |
+| `usedArea` / `packedArea` | Σ rộng×dài BTP đã xếp |
+| `sheetArea` | `sheetCount × origW × origH` |
+| `trimArea` | phần biên máy |
+| `usableArea` / `usableWidth` / `usableHeight` | khổ hữu dụng |
+| `wasteArea` | `sheetArea − packedArea` (= trim + scrap + remnant) |
 | `wasteRatio` | `wasteArea / sheetArea` |
-| `scrapArea` | Σ `scrapWidth × strip.height` — không tái sử dụng |
-| `remnantArea` | Σ phần dư dưới tấm |
+| `utilization` | `packedArea / sheetArea` |
+| `scrapArea` | vụn trong hàng — không tái sử dụng |
+| `remnantArea` | dải nguyên còn lại — tái sử dụng |
+| `trim` | `{left,right,top,bottom}` |
 | `remnantLabel` | `"W×H, ..."` hoặc `"không còn dải nguyên"` |
 | `cutCount` | xem công thức dưới |
 | `packedCount` / `demandCount` | số tấm đã xếp / số tấm đơn |
@@ -228,7 +243,7 @@ Text UI:
 | `True` | trộn hàng | Trộn các khổ cùng chiều dài trong một hàng |
 | `"backfill"` | dư hàng trộn | Xếp cùng khổ trước, phần dư hàng mới trộn |
 
-`desc.sheetTxt` nói có xoay tấm nguyên hay không. `desc.rows`: `"{name} → hàng dài {stripH} (xoay 90°)"`.
+`desc.sheetTxt` = `"Xoay hướng cắt tấm nguyên"` nếu swapped, không ghi thành 3000×2200. `desc.rows`: `"{name} → hàng dài {stripH} (xoay 90°)"`.
 
 ---
 
@@ -241,9 +256,9 @@ Text UI:
 | `is_positive_number(n)` | finite và `> 0` |
 | `all_ints(sheet, items)` | mọi kích thước gần nguyên → bật DP |
 | `count_packed(sheets)` | đếm SL theo `key` (kèm name/orig size) |
-| `assert_valid_plan(plan)` | dải không vượt tấm; tấm cùng dài dải, thẳng hàng, không tràn mép. List lỗi (rỗng = OK) |
+| `assert_valid_plan(plan)` | không đè trim; cùng dài dải / thẳng hàng; packed+trim+scrap+remnant = sheetArea; tờ không đổi nhãn W×H |
 
-`assert_valid_plan` **không** kiểm tra đủ đơn, không chồng theo diện tích tổng, không khớp `cuts`.
+`assert_valid_plan` **không** kiểm tra đủ đơn, không khớp `cuts`.
 
 ---
 
@@ -267,8 +282,10 @@ Text UI:
 
 ```text
 {
-  width, height, usedHeight,
-  strips: [{ y, height, usedWidth, scrapWidth, pieces }],
+  width, height, usedHeight,           # luôn orig W×H
+  origSheetWidth, origSheetHeight, swapped,
+  trim, trimZones, usableRect,
+  strips: [{ y, height, usedWidth, scrapWidth, scrapRect, orientation, pieces }],
   remnant: { x, y, width, height }
 }
 ```
@@ -278,7 +295,7 @@ Text UI:
 ```text
 {
   id, title, best, label,
-  sheetWidth, sheetHeight, swapped, mix,
+  sheetWidth, sheetHeight, origSheetWidth, origSheetHeight, swapped, mix,
   desc: { sheetTxt, mixTxt, rows },
   sheets, cuts, metrics
 }

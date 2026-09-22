@@ -44,10 +44,16 @@ def api_sample():
 @app.post("/api/suggest")
 def api_suggest():
     data = request.get_json(silent=True) or {}
+    allow_piece = data.get("allowPieceRotation")
+    if allow_piece is None:
+        allow_piece = data.get("allowRotation", True)
     result = suggest_plans(
         data.get("sheet") or {},
         data.get("items") or [],
-        allow_rotation=data.get("allowRotation", True),
+        allow_rotation=bool(allow_piece),
+        allow_piece_rotation=bool(allow_piece),
+        allow_sheet_rotation=bool(data.get("allowSheetRotation", False)),
+        trim_input=data.get("trim"),
         max_plans=int(data.get("maxPlans") or 6),
     )
     return jsonify(result)
