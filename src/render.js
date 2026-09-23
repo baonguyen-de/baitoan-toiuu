@@ -118,11 +118,7 @@ export function renderMetrics(plan) {
       <div><span>Khổ hữu dụng</span><b>${fmt(m.usableWidth)}×${fmt(m.usableHeight)}</b></div>
       <div><span>Đã xếp</span><b>${m.packedCount}/${m.demandCount}</b></div>
       <div><span>Nhát cắt</span><b>${m.cutCount}</b></div>
-    </div>
-    <p class="plan-desc">
-      ${esc(plan.desc.sheetTxt)}. ${esc(plan.desc.mixTxt)}.
-      ${plan.desc.rows.map((r) => esc(r)).join(" · ")}
-    </p>`
+    </div>`
 }
 
 function trimGuide(trim) {
