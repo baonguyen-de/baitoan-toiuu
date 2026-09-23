@@ -47,7 +47,7 @@ Sinh vài cách cắt, **cách đầu tiên là tốt nhất**.
    `mix` khác `True` vẫn truyền `fill_mode="dp"` vào `candidate_from` nhưng homogeneous không dùng; backfill tự gọi `fill_strip(..., "dp")` cho khe dư.
 
 5. Gộp plan trùng `layout_hash`, giữ bản `score_plan` nhỏ hơn.
-6. Sort lexicographic, lấy `max_plans` cái. Gán `id=plan-N`, `title=Cách N`, `best=(N==1)`, `label` = `mix_label` + `"xoay hướng cắt tấm nguyên"` nếu `swapped`.
+6. Sort lexicographic, lấy `max_plans` cái. Gán `id=plan-N`, `title=Cách N`, `best=(N==1)`, `label` = `mix_label` + `"xoay Tấm nguyên BTP"` nếu `swapped`.
 
 `fill_modes_mixed`: kích thước gần nguyên (`all_ints`) thì `["dp", "wide"]`, không thì `["wide", "narrow"]` (DP làm tròn số nguyên).
 
@@ -243,7 +243,7 @@ Text UI:
 | `True` | trộn hàng | Trộn các khổ cùng chiều dài trong một hàng |
 | `"backfill"` | dư hàng trộn | Xếp cùng khổ trước, phần dư hàng mới trộn |
 
-`desc.sheetTxt` = `"Xoay hướng cắt tấm nguyên"` nếu swapped, không ghi thành 3000×2200. `desc.rows`: `"{name} → hàng dài {stripH} (xoay 90°)"`.
+`desc.sheetTxt` = `"Xoay Tấm nguyên BTP"` nếu swapped, không ghi thành 3000×2200. `desc.rows`: `"{name} → hàng dài {stripH} (xoay 90°)"`.
 
 ---
 

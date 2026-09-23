@@ -59,7 +59,7 @@ Mỗi plan:
 
 ```text
 {
-  id, title, best, label,          # "Cách 1", "trộn hàng · xoay hướng cắt tấm nguyên"
+  id, title, best, label,          # "Cách 1", "trộn hàng · xoay Tấm nguyên BTP"
   sheetWidth, sheetHeight, origSheetWidth, origSheetHeight, swapped, mix,
   desc: { sheetTxt, mixTxt, rows },
   sheets, cuts, metrics
@@ -68,7 +68,7 @@ Mỗi plan:
 
 `demand` là `items` đã `normalize` (có `key = "{name}::{w}x{h}"`).
 
-Đơn mẫu Python: `SAMPLE` trong `cutting_stock.py` — tấm 100×200; A 10×20×10, B 5×10×15, C 2×3×20. UI gọi `GET /api/sample` rồi ghi đè mẫu `chuan`.
+Đơn mẫu Python: `SAMPLE` trong `cutting_stock.py` — tấm 100×200; A 10×20×10, B 5×10×15, C 2×3×20. `GET /api/sample` vẫn trả mẫu này. UI version 3 không load mẫu: đơn vào từ query string `rong`, `dai`, `trai`, `phai`, `tren`, `duoi`, `n`, `items` (tuỳ chọn `item` lặp, `xoay`, `xoayTo`). `n` mở dòng trống khi chưa có `items`; có danh sách thì lấy `items`.
 
 ## Mục tiêu (lexicographic, nhỏ hơn = tốt hơn)
 
@@ -109,9 +109,10 @@ Ba kiểu mix **phải giữ**:
 |---|---|
 | **`cutting_stock.py`** | Solver đang chạy. Sửa thuật toán ở đây. |
 | `app.py` | Flask: UI tĩnh + `GET /api/sample` + `POST /api/suggest`. |
-| `index.html` | Form đơn, chọn mẫu, nút **Bắt đầu cắt**. |
-| `src/main.js` | Gọi API Python, state form / plan đang chọn. |
-| `src/examples.js` | Danh sách mẫu UI (chip nổi bật + dropdown). |
+| `index.html` | Form đơn, nút **Bắt đầu cắt**. Không còn mẫu ví dụ. |
+| `src/main.js` | Đọc query string, gọi API Python, state form / plan đang chọn. |
+| `src/query.js` | Đọc / ghi query string đơn hàng. |
+| `src/examples.js` | Dữ liệu mẫu cũ. Form version 3 không gắn mẫu này. |
 | `src/render.js` | Thẻ plan, metrics, SVG sơ đồ, zoom, hướng dẫn cắt. |
 | `src/style.css` | Giao diện. |
 | `src/solver.js` | Port JS **song song**, không phục vụ web. Chỉ đụng khi cố ý đồng bộ. |
@@ -148,5 +149,5 @@ Production Vercel: cùng `app` Flask + `cutting_stock.py`. UI tĩnh từ `public
 
 ```bash
 python -m unittest test_cutting_stock.py -v
-python app.py    # http://127.0.0.1:5000 — mẫu tự load, «Bắt đầu cắt»
+python app.py    # http://127.0.0.1:5000 — form trống, hoặc mở link có query string
 ```

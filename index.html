@@ -37,14 +37,8 @@
                 <input id="sheet-h" type="number" min="0" step="any" required />
               </label>
             </div>
-            <p class="hint">Ô Rộng / Dài giữ đúng số vừa gõ — thuật toán không đổi chỗ nhãn.</p>
 
-            <h2 title="Biên xén bắt buộc của máy, trừ trước khi xếp. Không phải phần dư sau khi xếp.">
-              Thông số máy xén (Trim)
-            </h2>
-            <p class="hint">
-              Biên xén <b>bắt buộc</b> của máy, khai báo trước rồi trừ ra. Không phải phần dư sau khi xếp BTP.
-            </p>
+            <h2>Thông số máy xén (Trim)</h2>
             <div class="trim-grid">
               <label>Trái
                 <input id="trim-l" type="number" min="0" step="any" value="0" />
@@ -80,22 +74,12 @@
 
             <label class="check">
               <input id="allow-rot" type="checkbox" checked />
-              Cho phép các tấm cắt xoay 90°
+              Cho phép xoay các Tấm cắt
             </label>
             <label class="check">
               <input id="allow-sheet-rot" type="checkbox" />
-              Cho phép xoay hướng cắt tấm nguyên
+              Cho phép xoay Tấm nguyên BTP
             </label>
-            <p class="hint">
-              Xoay BTP: đổi cạnh đặt từng tấm (ô vẽ có ↻). Xoay hướng cắt tấm nguyên: thuật toán thử cạnh cắt ngang khác — mặc định tắt.
-            </p>
-
-            <div class="sample-pick">
-              <span class="sample-pick__label">Mẫu ví dụ</span>
-              <div id="sample-chips" class="sample-chips"></div>
-              <select id="sample-select"></select>
-              <p id="sample-hint" class="sample-hint" hidden></p>
-            </div>
 
             <div class="actions">
               <button class="btn btn-primary" id="compute" type="submit">Bắt đầu cắt</button>

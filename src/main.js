@@ -1,4 +1,4 @@
-import { EXAMPLES, exampleById } from "./examples.js"
+import { buildOrderQuery, parseOrderQuery } from "./query.js"
 import {
   bindSheetZoom,
   colorMap,
@@ -12,34 +12,17 @@ import {
 
 const $ = (sel) => document.querySelector(sel)
 
-function samplePieceRotation(sample) {
-  if (sample.allowPieceRotation != null) return Boolean(sample.allowPieceRotation)
-  return sample.allowRotation !== false
-}
-
-function sampleSheetRotation(sample) {
-  return sample.allowSheetRotation === true
-}
-
-function sampleTrim(sample) {
-  const t = sample.trim || {}
-  return {
-    left: Number(t.left) || 0,
-    right: Number(t.right) || 0,
-    top: Number(t.top) || 0,
-    bottom: Number(t.bottom) || 0,
-  }
-}
-
 const state = {
-  sample: EXAMPLES[0],
-  allowPieceRotation: samplePieceRotation(EXAMPLES[0]),
-  allowSheetRotation: sampleSheetRotation(EXAMPLES[0]),
-  trim: sampleTrim(EXAMPLES[0]),
-  items: EXAMPLES[0].items.map((it, i) => ({ ...it, id: i + 1 })),
-  nextId: EXAMPLES[0].items.length + 1,
+  allowPieceRotation: true,
+  allowSheetRotation: false,
+  trim: { left: 0, right: 0, top: 0, bottom: 0 },
+  sheetW: "",
+  sheetH: "",
+  items: [{ id: 1, name: "", width: "", height: "", quantity: 1 }],
+  nextId: 2,
   result: null,
   selectedId: null,
+  formError: "",
 }
 
 function itemName(it) {
@@ -74,10 +57,9 @@ function updateUsableLine() {
 }
 
 function renderForm() {
-  const sample = state.sample
-  const trim = state.trim || sampleTrim(sample)
-  $("#sheet-w").value = state.sheetW ?? sample.sheet.width
-  $("#sheet-h").value = state.sheetH ?? sample.sheet.height
+  const trim = state.trim
+  $("#sheet-w").value = state.sheetW ?? ""
+  $("#sheet-h").value = state.sheetH ?? ""
   if ($("#trim-l")) $("#trim-l").value = trim.left
   if ($("#trim-r")) $("#trim-r").value = trim.right
   if ($("#trim-t")) $("#trim-t").value = trim.top
@@ -107,9 +89,16 @@ function escapeAttr(s) {
     .replaceAll("<", "&lt;")
 }
 
+function readDim(el) {
+  const raw = el.value.trim()
+  if (raw === "") return ""
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : ""
+}
+
 function readForm() {
-  state.sheetW = Number($("#sheet-w").value)
-  state.sheetH = Number($("#sheet-h").value)
+  state.sheetW = readDim($("#sheet-w"))
+  state.sheetH = readDim($("#sheet-h"))
   state.allowPieceRotation = $("#allow-rot").checked
   state.allowSheetRotation = Boolean($("#allow-sheet-rot")?.checked)
   state.trim = {
@@ -131,11 +120,37 @@ function readForm() {
     })
 }
 
+function syncAddressBar() {
+  const qs = buildOrderQuery({
+    sheetW: state.sheetW,
+    sheetH: state.sheetH,
+    trim: state.trim,
+    items: state.items.map((it) => ({
+      name: it.name,
+      width: it.width,
+      height: it.height,
+      quantity: it.quantity,
+    })),
+    allowPieceRotation: state.allowPieceRotation,
+    allowSheetRotation: state.allowSheetRotation,
+  })
+  const hash = state.selectedId ? `#${state.selectedId}` : ""
+  const next = `${location.pathname}?${qs}${hash}`
+  if (`${location.pathname}${location.search}${location.hash}` !== next) {
+    history.replaceState(null, "", next)
+  }
+}
+
 function renderResults() {
   const errHost = $("#errors")
   const result = state.result
   if (!result) {
-    errHost.hidden = true
+    if (state.formError) {
+      errHost.hidden = false
+      errHost.textContent = state.formError
+    } else {
+      errHost.hidden = true
+    }
     $("#plans").innerHTML = `<div class="empty">Nhấn «Bắt đầu cắt» để xem các phương án.</div>`
     $("#metrics").innerHTML = ""
     $("#viewer").innerHTML = ""
@@ -177,6 +192,7 @@ function renderResults() {
 
 async function compute() {
   readForm()
+  state.formError = ""
   const items = state.items.map((it) => ({
     name: itemName(it),
     width: Number(it.width),
@@ -201,17 +217,20 @@ async function compute() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     state.result = await res.json()
   } catch (err) {
-    errHost.hidden = false
-    errHost.textContent =
+    state.formError =
       "Không gọi được thuật toán Python. Chạy `python app.py` rồi mở http://127.0.0.1:5000 — " +
       err.message
+    errHost.hidden = false
+    errHost.textContent = state.formError
+    syncAddressBar()
     return
   }
   const wanted = location.hash.replace("#", "")
   state.selectedId =
-    (wanted && state.result.plans.some((p) => p.id === wanted) && wanted) ||
-    state.result.plans[0]?.id ||
+    (wanted && state.result.plans?.some((p) => p.id === wanted) && wanted) ||
+    state.result.plans?.[0]?.id ||
     null
+  syncAddressBar()
   renderResults()
 }
 
@@ -229,76 +248,11 @@ function addRow() {
   last?.focus()
 }
 
-function optionHtml(ex) {
-  const hot = ex.highlight ? ` class="sample-hot"` : ""
-  const star = ex.highlight ? "★ " : ""
-  return `<option value="${escapeAttr(ex.id)}"${hot} title="${escapeAttr(ex.title || "")}">${star}${escapeAttr(ex.name)}</option>`
-}
-
-function fillSampleSelect() {
-  const sel = $("#sample-select")
-  if (!sel) return
-  const hot = EXAMPLES.filter((ex) => ex.highlight)
-  const rest = EXAMPLES.filter((ex) => !ex.highlight)
-  sel.innerHTML = `
-    <optgroup label="Thử thuật toán">
-      ${hot.map(optionHtml).join("")}
-    </optgroup>
-    <optgroup label="Mẫu cơ bản">
-      ${rest.map(optionHtml).join("")}
-    </optgroup>`
-  const chips = $("#sample-chips")
-  if (chips) {
-    chips.innerHTML = hot
-      .map(
-        (ex) =>
-          `<button type="button" class="sample-chip" data-sample="${escapeAttr(ex.id)}" title="${escapeAttr(ex.title || "")}">${escapeAttr(ex.name)}</button>`,
-      )
-      .join("")
-  }
-}
-
-function syncSampleUi(id) {
-  const sample = exampleById(id)
-  const sel = $("#sample-select")
-  if (sel) {
-    sel.value = sample.id
-    sel.classList.toggle("is-highlight", Boolean(sample.highlight))
-  }
-  document.querySelectorAll(".sample-chip").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.sample === sample.id)
-  })
-  const hint = $("#sample-hint")
-  if (hint) {
-    hint.textContent = sample.title || ""
-    hint.hidden = !sample.title
-    hint.classList.toggle("is-highlight", Boolean(sample.highlight))
-  }
-}
-
-function loadSampleById(id) {
-  const sample = exampleById(id)
-  state.sample = sample
-  state.sheetW = sample.sheet.width
-  state.sheetH = sample.sheet.height
-  state.trim = sampleTrim(sample)
-  state.allowPieceRotation = samplePieceRotation(sample)
-  state.allowSheetRotation = sampleSheetRotation(sample)
-  state.items = sample.items.map((it, i) => ({ ...it, id: i + 1 }))
-  state.nextId = state.items.length + 1
-  state.result = null
-  state.selectedId = null
-  if (location.hash) history.replaceState(null, "", location.pathname + location.search)
-  syncSampleUi(sample.id)
-  renderForm()
-  compute()
-}
-
 function onPlansClick(ev) {
   const btn = ev.target.closest("[data-plan]")
   if (!btn) return
   state.selectedId = btn.dataset.plan
-  history.replaceState(null, "", `#${state.selectedId}`)
+  syncAddressBar()
   renderResults()
 }
 
@@ -312,29 +266,29 @@ function onTableInput(ev) {
   }
 }
 
-async function init() {
-  try {
-    const res = await fetch("/api/sample")
-    if (res.ok) {
-      const data = await res.json()
-      const chuan = EXAMPLES.find((e) => e.id === "chuan")
-      if (chuan && data.sheet && Array.isArray(data.items)) {
-        chuan.sheet = data.sheet
-        chuan.items = data.items
-      }
-    }
-  } catch {
-    /* giữ EXAMPLES */
-  }
-  fillSampleSelect()
+function applyQuery(parsed) {
+  state.sheetW = parsed.sheetW
+  state.sheetH = parsed.sheetH
+  state.trim = parsed.trim
+  state.allowPieceRotation = parsed.allowPieceRotation
+  state.allowSheetRotation = parsed.allowSheetRotation
+  const rows = parsed.items.length ? parsed.items : [{ name: "", width: "", height: "", quantity: 1 }]
+  state.items = rows.map((it, i) => ({
+    id: i + 1,
+    name: it.name ?? "",
+    width: it.width ?? "",
+    height: it.height ?? "",
+    quantity: it.quantity === "" || it.quantity == null ? 1 : it.quantity,
+  }))
+  state.nextId = state.items.length + 1
+  state.formError = parsed.error || ""
+}
+
+function init() {
+  const parsed = parseOrderQuery(location.search)
+  const auto = Boolean(parsed?.autoRun)
+  if (parsed) applyQuery(parsed)
   $("#add-row").addEventListener("click", addRow)
-  $("#sample-select").addEventListener("change", (ev) => loadSampleById(ev.target.value))
-  $("#sample-chips")?.addEventListener("click", (ev) => {
-    const btn = ev.target.closest("[data-sample]")
-    if (!btn) return
-    loadSampleById(btn.dataset.sample)
-  })
-  $("#compute").addEventListener("click", compute)
   $("#plans").addEventListener("click", onPlansClick)
   $("#item-body").addEventListener("click", onTableInput)
   $("#order-form").addEventListener("submit", (ev) => {
@@ -344,7 +298,9 @@ async function init() {
   ;["sheet-w", "sheet-h", "trim-l", "trim-r", "trim-t", "trim-b"].forEach((id) => {
     $(`#${id}`)?.addEventListener("input", updateUsableLine)
   })
-  loadSampleById("chuan")
+  renderForm()
+  renderResults()
+  if (auto) compute()
 }
 
 init()

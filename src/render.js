@@ -408,7 +408,7 @@ export function renderSheetSVG(sheet, colors, sheetNo, options = {}) {
 
   const origW = sheet.origSheetWidth ?? sheet.width
   const origH = sheet.origSheetHeight ?? sheet.height
-  const swapNote = sheet.swapped ? " · xoay hướng cắt" : ""
+  const swapNote = sheet.swapped ? " · xoay Tấm nguyên BTP" : ""
   const caption =
     mode === "used"
       ? `Phóng vùng cắt · tấm ${sheetNo}`

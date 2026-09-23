@@ -239,7 +239,7 @@ class TwoStageCutting(unittest.TestCase):
         subprocess.check_call([sys.executable, str(script)])
         public = ROOT / "public"
         self.assertTrue((public / "index.html").is_file())
-        for name in ("main.js", "render.js", "examples.js", "style.css"):
+        for name in ("main.js", "render.js", "examples.js", "style.css", "query.js"):
             self.assertTrue((public / "src" / name).is_file())
         self.assertFalse((public / "src" / "solver.js").exists())
 

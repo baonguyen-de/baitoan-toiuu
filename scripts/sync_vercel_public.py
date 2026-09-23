@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 SRC_OUT = PUBLIC / "src"
 
-UI_FILES = ("main.js", "render.js", "examples.js", "style.css")
+UI_FILES = ("main.js", "render.js", "examples.js", "style.css", "query.js")
 
 
 def main() -> int:

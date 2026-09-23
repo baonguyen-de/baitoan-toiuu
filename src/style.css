@@ -88,12 +88,14 @@ body {
 }
 
 .panel h2 {
-  margin: 0 0 10px;
+  margin: 18px 0 10px;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
 }
+
+.panel h2:first-child { margin-top: 0; }
 
 .sheet-size {
   display: grid;
@@ -190,87 +192,6 @@ td input { padding: 6px 8px; }
 
 .check input { width: auto; accent-color: var(--accent); }
 
-.sample-pick {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 12px 0;
-}
-
-.sample-pick__label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.sample-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 2px 0 6px;
-}
-
-.sample-chip {
-  border: 1px solid #e39a4a;
-  background: linear-gradient(#fff6e4, #ffd7a0);
-  color: #9a3f14;
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.sample-chip:hover {
-  background: linear-gradient(#ffe7c2, #ffc078);
-}
-
-.sample-chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent-dark);
-  color: #fff8ee;
-  box-shadow: 0 0 0 2px #c45c2648, 0 0 14px rgba(196, 92, 38, 0.45);
-}
-
-.sample-pick select {
-  font: inherit;
-  color: var(--ink);
-  background: #fff;
-  border: 1px solid #d7c7ab;
-  border-radius: 8px;
-  padding: 8px 10px;
-  width: 100%;
-}
-
-.sample-pick select:focus {
-  outline: 2px solid #c45c2688;
-  border-color: var(--accent);
-}
-
-.sample-pick select.is-highlight {
-  background: linear-gradient(#fff7e4, #ffdfb8);
-  border-color: var(--accent);
-  color: var(--accent-dark);
-  font-weight: 700;
-  box-shadow: 0 0 0 3px #c45c2633;
-}
-
-.sample-pick select option.sample-hot {
-  background-color: #ffe7cc;
-  color: #9a3f14;
-  font-weight: 700;
-}
-
-.sample-hint {
-  margin: 4px 0 0;
-  font-size: 12px;
-  line-height: 1.35;
-  color: var(--muted);
-}
-
-.sample-hint.is-highlight {
-  color: var(--accent-dark);
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -299,12 +220,6 @@ button {
 }
 
 .btn-primary:hover { background: var(--accent-dark); }
-
-.hint {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-}
 
 .results { min-width: 0; }
 

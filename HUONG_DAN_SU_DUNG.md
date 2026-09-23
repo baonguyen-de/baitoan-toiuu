@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng — Bài toán tối ưu cắt
 
-**Version:** version_2
+**Version:** version_3
 
 Phần mềm gợi ý **cách cắt nhiều khổ hộp từ tấm carton nguyên**, theo đúng máy xưởng: **cắt ngang trước, rồi cắt dọc từng hàng**.
 
@@ -78,16 +78,14 @@ Mỗi dòng một khổ hộp:
 
 ### Bước 4 — Hai loại xoay (tách riêng)
 
-- **Cho phép các tấm cắt xoay 90°** (`allowPieceRotation`) — xoay từng BTP. Ô vẽ có dấu ↻; cột đơn hàng **không** đổi Rộng/Dài.
-- **Cho phép xoay hướng cắt tấm nguyên** (`allowSheetRotation`) — thuật toán được thử đổi cạnh cắt ngang của tờ. Mặc định **tắt** (tránh bug V1 đổi 2200×3000 thành 3000×2200). Khi dùng, thẻ ghi **xoay hướng cắt tấm nguyên**; tờ vẫn Rộng × Dài như đã nhập.
+- **Cho phép xoay các Tấm cắt** (`allowPieceRotation`) — xoay từng hộp 90°. Ô vẽ có dấu ↻; cột đơn hàng **không** đổi Rộng/Dài.
+- **Cho phép xoay Tấm nguyên BTP** (`allowSheetRotation`) — xoay cả tờ carton nguyên trên bàn máy. Mặc định **tắt**. Khi dùng, thẻ ghi **xoay Tấm nguyên BTP**; tờ vẫn Rộng × Dài như đã nhập.
 
 Tắt xoay BTP khi giấy có hướng sóng bắt buộc.
 
 ### Bước 5 — Bắt đầu cắt
 
-Nhấn **Bắt đầu cắt**. Bên phải hiện các thẻ phương án.
-
-Có thể chọn **Mẫu ví dụ** (chip hoặc dropdown) để xem đơn mẫu rồi sửa lại cho đơn thật.
+Nhấn **Bắt đầu cắt**. Bên phải hiện các thẻ phương án. Thanh địa chỉ đổi thành link của đơn vừa nhập — copy link đó để mở lại đúng đơn.
 
 ---
 
@@ -101,7 +99,7 @@ Trên thẻ bạn thấy:
 
 - **Hiệu suất sử dụng** và **Tỷ lệ hao hụt** (2 chữ số thập phân + %)
 - Số **tấm nguyên** dùng và số **hàng** cắt
-- Kiểu xếp: **tách khổ** / **trộn hàng** / **dư hàng trộn** (và có thể **xoay hướng cắt tấm nguyên**)
+- Kiểu xếp: **tách khổ** / **trộn hàng** / **dư hàng trộn** (và có thể **xoay Tấm nguyên BTP**)
 - **Trim máy** / **Scrap** / **Remnant** — ba loại diện tích khác nhau
 - **Nhát cắt** — số đường máy phải cắt
 
@@ -168,7 +166,7 @@ Phần mềm tự thử nhiều kiểu, rồi chọn kiểu tốt. Nhãn trên t
 | **Tách khổ** | Mỗi hàng chỉ một loại hộp | Cắt đồng loạt cùng size, dễ làm |
 | **Trộn hàng** | Trong một hàng trộn vài khổ **cùng chiều dài** | Lấp kín ngang, giảm rác |
 | **Dư hàng trộn** | Xếp cùng khổ trước, khe ngang còn lại mới nhét khổ khác cùng dài | Vừa dễ cắt, vừa tận dụng khe |
-| **Xoay hướng cắt tấm nguyên** | Thử cạnh cắt ngang khác của tờ (tờ vẫn Rộng × Dài như nhập) | Đôi khi ghép hàng kín hơn |
+| **Xoay Tấm nguyên BTP** | Xoay cả tờ nguyên trên bàn máy (tờ vẫn Rộng × Dài như nhập) | Đôi khi ghép hàng kín hơn |
 
 Chỉ trộn được khi các hộp **cùng chiều dài hàng**. Xoay 90° đôi khi giúp hai khổ khác nhau thành cùng chiều dài.
 
@@ -205,11 +203,11 @@ Một băng ngang trên tấm, mọi hộp trong đó cùng chiều dài. Máy c
 **Nhát cắt**  
 Một đường máy phải cắt (ngang hoặc dọc). Ít nhát = làm nhanh hơn.
 
-**Xoay 90° (tấm cắt)**  
+**Cho phép xoay các Tấm cắt**  
 Đổi chỗ rộng và dài của hộp khi đặt lên hàng. Dùng khi không kỵ hướng sóng.
 
-**Xoay hướng cắt tấm nguyên**  
-Thuật toán thử đổi cạnh cắt ngang của tờ. Không đổi ô nhập Rộng/Dài, không đổi tên trục. Thẻ ghi rõ khi dùng.
+**Cho phép xoay Tấm nguyên BTP**  
+Xoay cả tờ carton nguyên trên bàn máy 90°. Không đổi ô nhập Rộng/Dài, không đổi tên trục. Thẻ ghi rõ khi dùng.
 
 **Trim / biên xén máy**  
 Phần mép bắt buộc máy phải xén **trước khi xếp**. Không phải khe còn lại sau packing.
@@ -262,24 +260,35 @@ Sơ đồ zoom phần đã xếp hộp, có thước Rộng / Dài.
 - Khổ lớn hơn tấm nguyên (kể cả xoay) → không có sơ đồ, có thông báo rõ.
 - **Scrap ít** quan trọng hơn **remnant lớn**: remnant còn dùng, scrap thì bỏ. Trim là biên máy, không phải dư sau xếp.
 - Trộn hàng tiết kiệm giấy hơn nhưng trên máy phải cắt **nhiều size trong cùng một hàng**. Nếu xưởng muốn cắt đồng loạt một size, chọn thẻ **tách khổ**.
-- Mẫu ví dụ chỉ để thử phần mềm, không phải đơn sản xuất.
 
 ---
 
-## 7. Mẫu ví dụ (nếu muốn thử)
+## 7. Mở đơn bằng đường link
 
-Chip nổi bật (so sánh kiểu xếp):
+Dán tham số lên link. Trang điền form sẵn. Đơn đủ số thì tự **Bắt đầu cắt**.
 
-| Mẫu | Để thấy gì |
+```text
+http://127.0.0.1:5000/?rong=2200&dai=3000&trai=25&phai=25&tren=0&duoi=0&n=3&items=A,700,1000,3|B,800,1000,3|C,650,1000,3
+```
+
+| Tham số | Ý nghĩa |
 |---|---|
-| Đơn poster 2200×3000 | Trim trái/phải 25 mm; A 700 / B 800 / C 650 × 1000 SL3 — 1 tấm, hiệu suất 97,73%, hao hụt 2,27% |
-| Ghép dư hàng | Trộn hai khổ cùng dài thì 1 tờ, tách khổ phải 2 tờ |
-| Ít tờ hơn | Đôi khi tách khổ dùng ít tờ hơn trộn |
-| Gần lấp kín / Trộn không rác | Lấp ngang, rác ≈ 0 |
-| Đơn xưởng | Đơn nhiều khổ, gần thực tế |
-| Xoay ghép hàng | Xoay hướng cắt tấm nguyên rồi trộn, rác giảm |
+| `rong` | Rộng tấm nguyên |
+| `dai` | Dài tấm nguyên |
+| `trai` `phai` `tren` `duoi` | Trim trái, phải, trên, dưới. Bỏ trống thì bằng 0 |
+| `n` | Số dòng trên form khi chưa có danh sách. Có `items` thì lấy danh sách (`n` có thể bỏ, bằng số dòng, hoặc bằng tổng SL) |
+| `items` | Mảng tấm: `kí hiệu,rộng,dài,số lượng`, mỗi tấm cách nhau bằng `\|` hoặc `;` |
+| `item` | Một tấm, cùng format. Có thể lặp: `item=A,700,1000,3&item=B,800,1000,3` |
+| `xoay` | Tuỳ chọn. `1` cho phép xoay các Tấm cắt (mặc định). `0` tắt |
+| `xoayTo` | Tuỳ chọn. `1` cho phép xoay Tấm nguyên BTP. Mặc định `0` |
 
-Dropdown **Mẫu cơ bản**: Đơn chuẩn, Lấp kín, Phải xoay, Cấm xoay, Khổ quá to, Kích thước lẻ, …
+Kí hiệu có dấu phẩy hoặc dấu `|` thì viết dạng mã hóa (`%2C` là dấu phẩy, `%7C` là dấu `|`). Ví dụ tấm tên `A,B` rộng 6 dài 7 SL 1: `A%2CB,6,7,1`. Trình duyệt đổi `|` thành `%7C` thì link vẫn đọc được.
+
+Chỉ truyền khổ và số dòng, chưa có danh sách, thì form mở sẵn bấy nhiêu dòng trống:
+
+```text
+http://127.0.0.1:5000/?rong=2200&dai=3000&trai=25&phai=25&tren=0&duoi=0&n=3
+```
 
 ---
 

@@ -742,7 +742,7 @@ def better_score(a, b) -> bool:
 
 def describe(assignment, mix, swapped, orig_w, orig_h):
     sheet_txt = (
-        "Xoay hướng cắt tấm nguyên"
+        "Xoay Tấm nguyên BTP"
         if swapped
         else f"Tấm {fmt(orig_w)}×{fmt(orig_h)}, cắt ngang trước rồi cắt dọc"
     )
@@ -1028,7 +1028,7 @@ def suggest_plans(
     for i, cand in enumerate(unique[:max_plans]):
         bits = [mix_label(cand["mix"])]
         if cand["swapped"]:
-            bits.append("xoay hướng cắt tấm nguyên")
+            bits.append("xoay Tấm nguyên BTP")
         plans.append(
             {
                 "id": f"plan-{i + 1}",

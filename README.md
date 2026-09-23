@@ -66,22 +66,25 @@ Local vẫn `python app.py`. Không dùng `npm run dev` trên Vercel.
 
 ### Dùng giao diện
 
-1. Trang tự load mẫu **Đơn chuẩn** (`chuan`) và gọi gợi ý cắt.
+1. Mở trang trống, hoặc mở link có query string (form tự điền; đơn đủ thì tự cắt).
 2. Sửa **Rộng × Dài** tấm nguyên và bảng **Các tấm cần cắt** (kí hiệu, rộng, dài, SL).
 3. Nhập **Trim máy** (trái/phải/trên/dưới, mặc định 0) — biên xén bắt buộc, trừ trước khi xếp.
-4. Tích **Cho phép các tấm cắt xoay 90°** nếu không kỵ hướng sóng. Ô **xoay hướng cắt tấm nguyên** mặc định tắt.
+4. Tích **Cho phép xoay các Tấm cắt** nếu không kỵ hướng sóng. Ô **Cho phép xoay Tấm nguyên BTP** mặc định tắt.
 5. **Thêm tấm cắt** / × để thêm-xóa dòng. SL phải nguyên dương.
-6. **Bắt đầu cắt** để tính lại. Cách đầu tiên là tốt nhất (`score_plan`). Hai chỉ số nổi: hiệu suất / hao hụt.
+6. **Bắt đầu cắt** để tính lại. Cách đầu tiên là tốt nhất (`score_plan`). Hai chỉ số nổi: hiệu suất / hao hụt. Thanh địa chỉ thành link của đơn đó.
 7. Chọn thẻ cách cắt bên phải để xem sơ đồ + hướng dẫn nhát (xén biên → ngang → dọc).
 
 Đơn vị (cm, mm…) tự chọn, miễn nhất quán.
 
-**Mẫu ví dụ** (`src/examples.js`):
+**Query string** (version 3, không còn chọn mẫu trên form):
 
-- Chip nổi bật: **Đơn poster 2200×3000**, Ghép dư hàng, Ít tờ hơn, Gần lấp kín, Trộn không rác, Đơn xưởng, Xoay ghép hàng.
-- Dropdown **Mẫu cơ bản**: Đơn chuẩn, Lấp kín, Trộn cùng dài, Phải xoay, Cấm xoay, Nhiều tấm, Khổ quá to, kích thước lẻ, …
+```text
+/?rong=2200&dai=3000&trai=25&phai=25&tren=0&duoi=0&n=3&items=A,700,1000,3|B,800,1000,3|C,650,1000,3
+```
 
-`GET /api/sample` ghi đè kích thước mẫu **Đơn chuẩn** bằng `SAMPLE` Python (A/B/C trên tấm 100×200).
+`rong`/`dai` tấm nguyên, `trai`/`phai`/`tren`/`duoi` trim, `n` số dòng trống khi chưa có danh sách, `items` là `kí hiệu,rộng,dài,sl` ngăn bằng `|` hoặc `;`. Có thể lặp `item=...`. Tuỳ chọn `xoay` và `xoayTo` (`1` hoặc `0`). Chi tiết: `HUONG_DAN_SU_DUNG.md`.
+
+`GET /api/sample` vẫn trả `SAMPLE` Python (A/B/C trên tấm 100×200). UI không gọi endpoint này.
 
 ### Sơ đồ
 
@@ -149,7 +152,7 @@ Body `POST /api/suggest`:
 | `trim` | `0` | `{left, right, top, bottom}` ≥ 0 — biên xén máy, trừ trước |
 | `items` | `[]` | `[{name, width, height, quantity}, ...]` |
 | `allowPieceRotation` | `true` | xoay từng BTP 90° |
-| `allowSheetRotation` | `false` | thử xoay hướng cắt tấm nguyên |
+| `allowSheetRotation` | `false` | thử xoay Tấm nguyên BTP |
 | `allowRotation` | `true` | **cũ** — map sang `allowPieceRotation` |
 | `maxPlans` | `6` | số cách trả về |
 
@@ -177,8 +180,9 @@ print(result["plans"][0]["metrics"])
 | `cutting_stock.py` | Solver. Điểm vào: `suggest_plans` |
 | `app.py` | Flask: UI + `/api/suggest` |
 | `index.html` | Form + khung kết quả |
-| `src/main.js` | Gọi API, chọn mẫu, chọn cách cắt |
-| `src/examples.js` | Mẫu ví dụ trên UI |
+| `src/main.js` | Đọc query string, gọi API, chọn cách cắt |
+| `src/query.js` | Đọc / ghi query string đơn hàng |
+| `src/examples.js` | Dữ liệu mẫu cũ — form version 3 không gắn |
 | `src/render.js` | Sơ đồ SVG, metrics, hướng dẫn cắt |
 | `src/style.css` | Giao diện |
 | `src/solver.js` | Port JS — **không** chạy trên web |
