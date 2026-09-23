@@ -411,28 +411,38 @@ button {
   color: var(--muted);
 }
 
-.waste-split {
+.kpi-facts {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed #cbb89288;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 7px;
 }
 
-.waste-split div {
-  background: #f3eadc;
-  border-radius: 10px;
-  padding: 10px 12px;
+.kpi-facts div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
 }
 
-.waste-split span {
-  display: block;
+.kpi-facts dt {
   color: var(--muted);
   font-size: 12px;
+  font-weight: 500;
 }
 
-.waste-split b {
-  font-size: 15px;
+.kpi-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
 }
+
+.kpi--ok .kpi-facts dd { color: var(--ok); }
+.kpi--warn .kpi-facts dd { color: var(--warn); }
 
 .plan-card dl {
   margin: 0;
@@ -686,7 +696,7 @@ code {
   .workspace { grid-template-columns: 1fr; }
   .top { flex-direction: column; align-items: flex-start; }
   .metrics { grid-template-columns: 1fr 1fr; }
-  .kpi-row, .waste-split { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: 1fr; }
   .sheet-block { flex-direction: column; }
   .sheet-svg--full, .sheet-svg--used { width: 100%; }
   .sheet-zoom-wrap--full .sheet-full-viewport,

@@ -99,25 +99,24 @@ export function renderMetrics(plan) {
         <span>Hiệu suất sử dụng</span>
         <b>${pct2(m.utilization)}</b>
         <em>${area(m.packedArea || m.usedArea)} / ${area(m.sheetArea)}</em>
+        <dl class="kpi-facts">
+          <div><dt>Tổng diện tích đã dùng</dt><dd>${area(m.packedArea || m.usedArea)}</dd></div>
+          <div><dt>Số lượng tấm nguyên BTP dùng</dt><dd>${m.sheetCount}</dd></div>
+          <div><dt>Khổ hữu dụng Tấm BTP</dt><dd>${fmt(m.usableWidth)}×${fmt(m.usableHeight)}</dd></div>
+          <div><dt>Đã xếp</dt><dd>${m.packedCount}/${m.demandCount}</dd></div>
+          <div><dt>Nhát cắt (số hàng ngang cắt)</dt><dd>${m.cutCount} (${m.stripCount})</dd></div>
+        </dl>
       </div>
       <div class="kpi kpi--warn">
         <span>Tỷ lệ hao hụt</span>
         <b>${pct2(m.wasteRatio)}</b>
-        <em>${area(m.wasteArea)}</em>
+        <em>${area(m.wasteArea)} = Trim máy + Scrap + Remnant</em>
+        <dl class="kpi-facts">
+          <div><dt>Trim máy</dt><dd>${area(m.trimArea || 0)}</dd></div>
+          <div><dt>Scrap (không tái sử dụng)</dt><dd>${area(m.scrapArea)}</dd></div>
+          <div><dt>Remnant (tái sử dụng)</dt><dd>${esc(m.remnantLabel)}</dd></div>
+        </dl>
       </div>
-    </div>
-    <div class="waste-split">
-      <div><span>Trim máy</span><b>${area(m.trimArea || 0)}</b></div>
-      <div><span>Scrap (không tái sử dụng)</span><b>${area(m.scrapArea)}</b></div>
-      <div><span>Remnant (tái sử dụng)</span><b>${esc(m.remnantLabel)}</b></div>
-    </div>
-    <div class="metrics">
-      <div><span>Số lượng tấm nguyên dùng</span><b>${m.sheetCount}</b></div>
-      <div><span>Số hàng ngang cắt</span><b>${m.stripCount}</b></div>
-      <div><span>Tổng diện tích đã dùng</span><b>${area(m.packedArea || m.usedArea)}</b></div>
-      <div><span>Khổ hữu dụng</span><b>${fmt(m.usableWidth)}×${fmt(m.usableHeight)}</b></div>
-      <div><span>Đã xếp</span><b>${m.packedCount}/${m.demandCount}</b></div>
-      <div><span>Nhát cắt</span><b>${m.cutCount}</b></div>
     </div>`
 }
 
